@@ -9,14 +9,14 @@ T0 = 300        # temperatura base
 alpha = 20      # amplitud
 L = 10          # longitud característica
 tau = 5         # periodo temporal
-U = 2           # velocidad de la partícula
+U = 50           # velocidad de la partícula
 
 # dominio espacial
 x = np.linspace(0, 50, 500)
 
 # tiempos cercanos
 t0 = 1
-times = [t0, t0 + 0.2, t0 + 0.4]
+times = np.linspace(t0, 10*t0, 100)
 
 # =====================
 # campo de temperatura
@@ -37,6 +37,6 @@ for t in times:
 plt.xlabel("x")
 plt.ylabel("T(x,t)")
 plt.title("Campo de temperatura en instantes cercanos")
-plt.legend()
+# plt.legend()
 
 plt.show()

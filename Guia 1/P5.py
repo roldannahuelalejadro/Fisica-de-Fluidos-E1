@@ -40,3 +40,42 @@ plt.title("Campo de temperatura en instantes cercanos")
 # plt.legend()
 
 plt.show()
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# =====================
+# Parámetros
+# =====================
+
+T0 = 300
+alpha = 20
+L = 10
+tau = 5
+
+# dominios
+x = np.linspace(0, 50, 200)
+t = np.linspace(0, 10, 200)
+
+# grilla 2D
+X, T = np.meshgrid(x, t)
+
+# campo de temperatura
+Temp = T0 - alpha * np.exp(-X/L) * np.sin(2*np.pi*T/tau)
+
+# =====================
+# gráfico 3D
+# =====================
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+ax.plot_surface(X, T, Temp)
+
+ax.set_xlabel("x")
+ax.set_ylabel("t")
+ax.set_zlabel("T(x,t)")
+ax.set_title("Superficie de temperatura T(x,t)")
+
+plt.show()

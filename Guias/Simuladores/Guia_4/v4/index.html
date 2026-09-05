@@ -1,0 +1,2834 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guia 4 v4 - Simulador 3D</title>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [["\\(", "\\)"], ["$", "$"]] },
+      startup: {
+        typeset: false,
+        pageReady: () => MathJax.startup.defaultPageReady().then(() => {
+          if (window.renderMathNow) window.renderMathNow();
+        })
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17211f;
+      --muted: #64706b;
+      --line: #d7dfda;
+      --paper: #f7f5ef;
+      --panel: #ffffff;
+      --panel-soft: #eef5f1;
+      --teal: #087f79;
+      --blue: #315f95;
+      --amber: #c08a2a;
+      --danger: #9b3f34;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: 220px minmax(520px, 1fr) 390px;
+      min-width: 1050px;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    .nav {
+      border-right: 1px solid var(--line);
+      background: #fbfaf5;
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: auto;
+    }
+
+    .brand {
+      padding: 2px 4px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .module-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .module-btn {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      border-radius: 7px;
+      padding: 10px 10px;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .module-btn:hover {
+      background: #f0f3ef;
+    }
+
+    .module-btn.active {
+      background: #e5f2ee;
+      border-color: #bddbd4;
+    }
+
+    .badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 750;
+      font-size: 12px;
+      color: #f8fbfa;
+      background: var(--teal);
+    }
+
+    .module-btn:nth-child(2n) .badge { background: var(--blue); }
+    .module-btn:nth-child(3n) .badge { background: var(--amber); }
+
+    .module-name {
+      display: block;
+      font-weight: 720;
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    .module-sub {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    .stage {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(#e9eeeb 1px, transparent 1px),
+        linear-gradient(90deg, #e9eeeb 1px, transparent 1px),
+        #f7f8f4;
+      background-size: 64px 64px;
+    }
+
+    #scene3d {
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+    }
+
+    .hud {
+      position: absolute;
+      left: 18px;
+      top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .hud-title {
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(215,223,218,.9);
+      border-radius: 7px;
+      padding: 8px 10px;
+      backdrop-filter: blur(6px);
+      max-width: 520px;
+    }
+
+    .hud-title h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .hud-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .scene-actions {
+      position: absolute;
+      right: 18px;
+      top: 16px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .scene-actions button,
+    .right button {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.9);
+      color: var(--ink);
+      border-radius: 7px;
+      padding: 8px 11px;
+      cursor: pointer;
+    }
+
+    .scene-actions button:hover,
+    .right button:hover {
+      background: #eef5f1;
+    }
+
+    .colorbar {
+      position: absolute;
+      right: 20px;
+      bottom: 22px;
+      width: 76px;
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(215,223,218,.95);
+      border-radius: 7px;
+      padding: 9px;
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 7px;
+      align-items: stretch;
+      backdrop-filter: blur(6px);
+    }
+
+    .scene-profile {
+      position: absolute;
+      left: 18px;
+      bottom: 22px;
+      width: 190px;
+      height: 142px;
+      border: 1px solid rgba(215,223,218,.95);
+      border-radius: 7px;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(6px);
+    }
+
+    .bar {
+      height: 158px;
+      border: 1px solid #aebbb5;
+      background: linear-gradient(to top, #2c3f90, #2b78a0, #27a1a2, #72bd72, #d3d46a);
+    }
+
+    .bar-labels {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .bar-labels strong {
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .right {
+      border-left: 1px solid var(--line);
+      background: #fbfaf5;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      min-height: 0;
+    }
+
+    .right-head {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .right-head h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .controls {
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 11px;
+      background: #ffffff;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 1fr 70px;
+      grid-template-areas:
+        "label value"
+        "range range";
+      gap: 5px 10px;
+      align-items: center;
+    }
+
+    .control label {
+      grid-area: label;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 680;
+      line-height: 1.2;
+    }
+
+    .control input[type="number"] {
+      grid-area: value;
+      width: 70px;
+      border: 1px solid var(--line);
+      background: #fbfdfa;
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .control input[type="range"] {
+      grid-area: range;
+      width: 100%;
+      accent-color: var(--teal);
+      cursor: ew-resize;
+    }
+
+    .scroll {
+      min-height: 0;
+      overflow: auto;
+      padding: 14px 16px 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .section {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
+    .section:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .section h3 {
+      margin: 0 0 9px;
+      font-size: 12px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    #profile {
+      width: 100%;
+      height: 164px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      border-radius: 7px;
+      display: block;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      background: #ffffff;
+      border-radius: 7px;
+      padding: 8px 9px;
+      min-height: 54px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .metric b {
+      display: block;
+      margin-top: 4px;
+      font-size: 14px;
+      line-height: 1.15;
+      word-break: break-word;
+    }
+
+    .steps {
+      display: grid;
+      gap: 10px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 9px;
+      align-items: start;
+    }
+
+    .step b {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #d9f0ec;
+      color: var(--teal);
+      font-size: 12px;
+    }
+
+    .step span {
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .formula {
+      border: 1px solid var(--line);
+      background: #ffffff;
+      border-radius: 7px;
+      padding: 10px;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    .formula div + div {
+      margin-top: 8px;
+    }
+
+    @media (max-width: 1180px) {
+      body { grid-template-columns: 190px minmax(480px, 1fr) 340px; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="nav">
+    <div class="brand">
+      <h1>Guia 4 v4</h1>
+      <p>Fluidos viscosos, soluciones analiticas.</p>
+    </div>
+    <div class="module-list" id="moduleList"></div>
+  </aside>
+
+  <main class="stage">
+    <canvas id="scene3d"></canvas>
+    <div class="hud">
+      <div class="hud-title">
+        <h2 id="sceneTitle"></h2>
+        <p id="sceneSubtitle"></p>
+      </div>
+    </div>
+    <div class="scene-actions">
+      <button id="resetView" type="button">vista</button>
+    </div>
+    <div class="colorbar">
+      <div class="bar"></div>
+      <div class="bar-labels">
+        <strong>vel.</strong>
+        <span>alto</span>
+        <span>bajo</span>
+      </div>
+    </div>
+    <canvas class="scene-profile" id="sceneProfile" width="380" height="284"></canvas>
+  </main>
+
+  <aside class="right">
+    <div class="right-head">
+      <h2>Parametros</h2>
+      <button id="resetParams" type="button">reset</button>
+    </div>
+    <div class="controls" id="controls"></div>
+    <div class="scroll">
+      <section class="section">
+        <h3>Perfil usado</h3>
+        <canvas id="profile" width="680" height="328"></canvas>
+      </section>
+      <section class="section">
+        <h3>Numeros</h3>
+        <div class="metrics" id="metrics"></div>
+      </section>
+      <section class="section">
+        <h3>Cuentas</h3>
+        <div class="steps" id="steps"></div>
+      </section>
+      <section class="section">
+        <h3>Formula final</h3>
+        <div class="formula" id="formula"></div>
+      </section>
+    </div>
+  </aside>
+
+  <script src="./vendor/three.min.js"></script>
+  <script src="./vendor/OrbitControls-global.js"></script>
+  <script>
+    const OrbitControls = THREE.OrbitControls;
+    const els = {
+      canvas: document.getElementById("scene3d"),
+      moduleList: document.getElementById("moduleList"),
+      controls: document.getElementById("controls"),
+      metrics: document.getElementById("metrics"),
+      steps: document.getElementById("steps"),
+      formula: document.getElementById("formula"),
+      profile: document.getElementById("profile"),
+      title: document.getElementById("sceneTitle"),
+      subtitle: document.getElementById("sceneSubtitle"),
+      resetView: document.getElementById("resetView"),
+      resetParams: document.getElementById("resetParams"),
+      sceneProfile: document.getElementById("sceneProfile")
+    };
+
+    const palette = ["#1f2c86", "#1767a6", "#009aa7", "#36a862", "#d4c84e"];
+    const defaults = {
+      p1: { U: 1.6, d: 1.2, mu: 1, G: 1.3, speed: 1 },
+      p2: { theta: 28, d: 0.9, mu: 1, rho: 1, g: 9.8, speed: 0.55 },
+      p3: { theta: 28, h1: 0.65, h2: 0.55, mu1: 1.4, mu2: 0.55, rho1: 1.2, rho2: 0.85, g: 9.8, speed: 0.55 },
+      p4: { a: 1, mu: 1, G: 2.4, speed: 0.9 },
+      p5: { a: 1, G: 2.2, nu: 1, rho: 1, speed: 0.8 },
+      p6i: { U: 1.5, d: 1.15, mu: 1, G: 1.6, speed: 1 },
+      p6ii: { U: 1.1, theta: 30, d: 1.0, mu: 1, rho: 1, g: 9.8, speed: 0.65 },
+      p6iii: { a: 0.45, b: 1.35, U1: 1.8, U2: 0.25, speed: 0.85 },
+      p6tc: { a: 0.58, b: 1.45, omega1: 3.2, omega2: 0.25, mu: 1, rho: 1, height: 5.6, speed: 0.8 },
+      p7: { D: 1.05, U: 1.2, mu: 1, rho: 1, rhoS: 2.6, Cd: 0.45, speed: 0.8 },
+      p8: { U: 1.6, nu: 0.45, t: 0.65, ymax: 3.0, speed: 0.7 },
+      p9: { Gamma: 5.0, nu: 0.45, t: 0.7, speed: 0.85 },
+      p10: { U0: 1.5, nu: 0.45, omega: 3.0, ymax: 3.2, speed: 0.75 },
+      p11: { U: 1.5, h: 1.8, nu: 0.45, t: 0.35, terms: 24, speed: 0.65 },
+      p12: { U: 1.4, nu: 0.18, xmax: 5.2, speed: 0.7 },
+      p13: { Omega: 3.0, nu: 0.35, R: 1.8, speed: 0.75 }
+    };
+
+    const state = {
+      active: "p1",
+      params: structuredClone(defaults),
+      frame: null,
+      particles: null,
+      staticTick: () => {},
+      profileData: [],
+      maxSpeed: 1,
+      time: 0
+    };
+
+    const modules = [
+      {
+        id: "p1",
+        short: "P1",
+        title: "P1: sandwich Couette-Poiseuille",
+        subtitle: "Dos placas paralelas con placa superior movil y gradiente de presion.",
+        controls: [
+          ["U", "velocidad placa U", -3, 3, 0.05],
+          ["d", "separacion d", 0.35, 2.8, 0.02],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["G", "G = -dp/dx", -6, 6, 0.05],
+          ["speed", "velocidad visual", 0, 3, 0.05]
+        ],
+        formula: [
+          String.raw`\(u(y)=\frac{U}{d}y+\frac{G}{2\mu}y(d-y)\)`,
+          String.raw`\(\tau_{xy}(y)=\mu\frac{du}{dy}=\mu\frac{U}{d}+G\left(\frac d2-y\right)\)`,
+          String.raw`\(q=\int_0^d u(y)\,dy=\frac{Ud}{2}+\frac{Gd^3}{12\mu}\)`
+        ],
+        steps: [
+          String.raw`Tomamos \(\vec v=u(y)\hat x\). Como no depende de \(x\), el termino convectivo \(u\,\partial_x u\) se anula.`,
+          String.raw`La ecuacion en \(x\) queda \(0=-\partial_x p+\mu u''\). Definiendo \(G=-\partial_x p\), resulta \(\mu u''=-G\).`,
+          String.raw`Integramos dos veces: \(u(y)=-Gy^2/(2\mu)+C_1y+C_2\).`,
+          String.raw`No deslizamiento: \(u(0)=0\) y \(u(d)=U\). Con esas constantes aparece el termino lineal de Couette mas la parabola de Poiseuille.`
+        ],
+        build: buildP1,
+        metrics: metricsP1,
+        profile: profileP1
+      },
+      {
+        id: "p2",
+        short: "P2",
+        title: "P2: pelicula en plano inclinado",
+        subtitle: "Capa viscosa que escurre por gravedad sobre una pared solida.",
+        controls: [
+          ["theta", "angulo theta [deg]", 0, 70, 1],
+          ["d", "espesor d", 0.25, 2.2, 0.02],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["rho", "densidad rho", 0.2, 4, 0.05],
+          ["g", "gravedad g", 0, 15, 0.1],
+          ["speed", "velocidad visual", 0, 1.2, 0.02]
+        ],
+        formula: [
+          String.raw`\(u(y)=\frac{\rho g\sin\theta}{\mu}\left(dy-\frac{y^2}{2}\right)\)`,
+          String.raw`\(u_{\max}=u(d)=\frac{\rho g\sin\theta}{2\mu}d^2\)`,
+          String.raw`\(\bar u=\frac1d\int_0^d u\,dy=\frac{2}{3}u_{\max}\)`,
+          String.raw`\(\dot m'=\rho d\bar u\)`
+        ],
+        steps: [
+          String.raw`Usamos \(x\) paralelo al plano e \(y\) normal a la pared. La fuerza de volumen que empuja es \(\rho g\sin\theta\).`,
+          String.raw`Para flujo paralelo estacionario: \(0=\rho g\sin\theta+\mu u''\).`,
+          String.raw`La pared impone \(u(0)=0\). En la superficie libre no hay esfuerzo tangencial: \(\tau(d)=\mu u'(d)=0\).`,
+          String.raw`Con esas dos condiciones queda una parabola abierta hacia abajo y el maximo cae justo en la superficie libre.`
+        ],
+        build: buildP2,
+        metrics: metricsP2,
+        profile: profileP2
+      },
+      {
+        id: "p4",
+        short: "P4",
+        title: "P4: Poiseuille cilindrico",
+        subtitle: "Flujo axial estacionario dentro de un tubo circular.",
+        controls: [
+          ["a", "radio a", 0.25, 2.4, 0.02],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["G", "G = -dp/dx", 0, 8, 0.05],
+          ["speed", "velocidad visual", 0, 1.8, 0.03]
+        ],
+        formula: [
+          String.raw`\(u(r)=\frac{G}{4\mu}(a^2-r^2)\)`,
+          String.raw`\(Q=\int_0^a2\pi r\,u(r)\,dr=\frac{\pi G a^4}{8\mu}\)`,
+          String.raw`\(\bar u=Q/(\pi a^2)=u_{\max}/2\)`,
+          String.raw`\(\tau_w=\mu u'(a)=-Ga/2\)`
+        ],
+        steps: [
+          String.raw`Por simetria \(\vec v=u(r)\hat x\), y el laplaciano que importa es \(\frac1r(r u')'\).`,
+          String.raw`Con \(G=-dp/dx\): \(\frac1r(r u')'=-G/\mu\).`,
+          String.raw`La regularidad en \(r=0\) elimina el termino logaritmico. La pared fija \(u(a)=0\).`,
+          String.raw`La integral de caudal pesa cada anillo con \(2\pi r\), por eso aparece la ley \(Q\propto a^4\).`
+        ],
+        build: buildP4,
+        metrics: metricsP4,
+        profile: profileP4
+      },
+      {
+        id: "p6tc",
+        short: "TC",
+        title: "P6(iv): Taylor-Couette laminar",
+        subtitle: "Cilindros coaxiales rotantes con contornos de modulo de velocidad.",
+        controls: [
+          ["a", "radio interno a", 0.25, 1.4, 0.02],
+          ["b", "radio externo b", 0.55, 2.6, 0.02],
+          ["omega1", "Omega interno", -6, 6, 0.05],
+          ["omega2", "Omega externo", -6, 6, 0.05],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["rho", "densidad rho", 0.2, 4, 0.05],
+          ["height", "altura visual", 2, 8, 0.1],
+          ["speed", "velocidad visual", 0, 2, 0.03]
+        ],
+        formula: [
+          String.raw`\(v_\theta(r)=Ar+\frac{B}{r}\)`,
+          String.raw`\(A=\frac{\Omega_2b^2-\Omega_1a^2}{b^2-a^2}\)`,
+          String.raw`\(B=\frac{a^2b^2(\Omega_1-\Omega_2)}{b^2-a^2}\)`,
+          String.raw`\(\tau_{r\theta}=\mu\left(\frac{dv_\theta}{dr}-\frac{v_\theta}{r}\right)=-\frac{2\mu B}{r^2}\)`,
+          String.raw`\(N_1/L=-4\pi\mu B\)`
+        ],
+        steps: [
+          String.raw`En el regimen laminar base suponemos \(\vec v=v_\theta(r)\hat\theta\), sin \(v_r\) ni \(v_z\).`,
+          String.raw`La ecuacion de cantidad de movimiento en \(\theta\) deja una ODE cuya solucion general es \(Ar+B/r\).`,
+          String.raw`No deslizamiento: \(v_\theta(a)=\Omega_1a\) y \(v_\theta(b)=\Omega_2b\). Resolver ese sistema da \(A\) y \(B\).`,
+          String.raw`La escena agrega bandas y celdas cuando el criterio de Rayleigh inviscido marca tendencia inestable; no reemplaza a una simulacion DNS.`
+        ],
+        build: buildP6TC,
+        metrics: metricsP6TC,
+        profile: profileP6TC
+      },
+      {
+        id: "p7",
+        short: "P7",
+        title: "P7: esfera y arrastre dimensional",
+        subtitle: "Comparacion entre escala viscosa e inercial alrededor de una esfera.",
+        controls: [
+          ["D", "diametro D", 0.15, 3.4, 0.02],
+          ["U", "velocidad U", 0.02, 6, 0.02],
+          ["mu", "viscosidad mu", 0.05, 5, 0.02],
+          ["rho", "densidad fluido rho", 0.1, 5, 0.05],
+          ["rhoS", "densidad esfera rho_s", 0.1, 10, 0.05],
+          ["Cd", "Cd alto Re", 0.1, 1.2, 0.01],
+          ["speed", "velocidad visual", 0, 2, 0.03]
+        ],
+        formula: [
+          String.raw`\(Re=\rho UD/\mu\)`,
+          String.raw`\(Re\ll1:\quad F_D=3\pi\mu D U\)`,
+          String.raw`\(Re\gg1:\quad F_D\simeq\frac12C_D\rho U^2\frac{\pi D^2}{4}\)`,
+          String.raw`\(U_{t,S}=\frac{(\rho_s-\rho)gD^2}{18\mu}\)`
+        ],
+        steps: [
+          String.raw`Las variables \(U,D,\mu,\rho\) producen un numero adimensional dominante: \(Re=\rho UD/\mu\).`,
+          String.raw`Si \(Re\ll1\), la inercia desaparece y la unica escala de fuerza es \(\mu U D\). Stokes fija el factor \(3\pi\).`,
+          String.raw`Si \(Re\gg1\), manda la presion dinamica \(\rho U^2\) multiplicada por el area frontal.`,
+          String.raw`Para velocidad terminal se iguala el peso efectivo de la esfera con la ley de arrastre del regimen correspondiente.`
+        ],
+        build: buildP7,
+        metrics: metricsP7,
+        profile: profileP7
+      }
+    ];
+
+    modules.splice(2, 0, {
+      id: "p3",
+      short: "P3",
+      title: "P3: pelicula de dos fluidos",
+      subtitle: "Dos capas viscosas con continuidad de velocidad y esfuerzo.",
+      controls: [
+        ["theta", "angulo theta [deg]", 0, 70, 1],
+        ["h1", "espesor inferior h1", 0.2, 1.8, 0.02],
+        ["h2", "espesor superior h2", 0.2, 1.8, 0.02],
+        ["mu1", "viscosidad mu1", 0.15, 5, 0.05],
+        ["mu2", "viscosidad mu2", 0.15, 5, 0.05],
+        ["rho1", "densidad rho1", 0.2, 4, 0.05],
+        ["rho2", "densidad rho2", 0.2, 4, 0.05],
+        ["g", "gravedad g", 0, 15, 0.1],
+        ["speed", "velocidad visual", 0, 1.2, 0.02]
+      ],
+      formula: [
+        String.raw`\(\mu_1u_1''=-\rho_1g\sin\theta,\qquad \mu_2u_2''=-\rho_2g\sin\theta\)`,
+        String.raw`\(\mu_2u_2'(h_1+h_2)=0,\quad u_1(0)=0\)`,
+        String.raw`\(u_1(h_1)=u_2(h_1),\quad \mu_1u_1'(h_1)=\mu_2u_2'(h_1)\)`,
+        String.raw`\(\tau_1(y)=g\sin\theta[\rho_1(h_1-y)+\rho_2h_2],\quad \tau_2(y)=\rho_2g\sin\theta(h_1+h_2-y)\)`
+      ],
+      steps: [
+        String.raw`Cada capa satisface la misma ecuacion de cantidad de movimiento, pero con su propia \(\rho\) y \(\mu\).`,
+        String.raw`La superficie libre impone esfuerzo nulo, y ese esfuerzo se integra hacia abajo acumulando el peso de fluido que queda encima.`,
+        String.raw`En la interfase no puede saltar ni la velocidad ni la traccion tangencial, por eso se pegan \(u\) y \(\tau\).`,
+        String.raw`Visualmente, la capa menos viscosa suele concentrar mas deformacion: cambia \(\mu_1,\mu_2\) y se ve en el perfil.`
+      ],
+      build: buildP3,
+      metrics: metricsP3,
+      profile: profileP3
+    });
+
+    modules.splice(4, 0,
+      {
+        id: "p5",
+        short: "P5",
+        title: "P5: escala de Poiseuille",
+        subtitle: "Analisis dimensional del caudal y la ley de cuarta potencia.",
+        controls: [
+          ["a", "radio a", 0.25, 2.4, 0.02],
+          ["G", "gradiente G", 0.1, 8, 0.05],
+          ["nu", "viscosidad cinematica nu", 0.08, 5, 0.02],
+          ["rho", "densidad rho", 0.2, 4, 0.05],
+          ["speed", "velocidad visual", 0, 1.8, 0.03]
+        ],
+        formula: [
+          String.raw`\(Q=f(a,\rho,\nu,G)\), con \(G=\Delta p/L\)`,
+          String.raw`\([Q]=L^3T^{-1},\quad [G]=ML^{-2}T^{-2},\quad [\rho\nu]=ML^{-1}T^{-1}\)`,
+          String.raw`\(Q=C\,\frac{G a^4}{\rho\nu}\)`,
+          String.raw`\(C=\pi/8\) al resolver Poiseuille exactamente.`
+        ],
+        steps: [
+          String.raw`El radio es la unica escala geometrica transversal: el area aporta \(a^2\).`,
+          String.raw`El balance viscoso da \(u\sim Ga^2/(\rho\nu)\), porque \(\mu=\rho\nu\).`,
+          String.raw`Multiplicando velocidad media por area: \(Q\sim a^2\,Ga^2/(\rho\nu)\).`,
+          String.raw`El simulador muestra lo sensible que es el caudal al radio: duplicar \(a\) multiplica \(Q\) por \(16\).`
+        ],
+        build: buildP5,
+        metrics: metricsP5,
+        profile: profileP5
+      },
+      {
+        id: "p6i",
+        short: "P6i",
+        title: "P6(i): Couette-Poiseuille y maximo",
+        subtitle: "Placa superior movil, presion impuesta y ubicacion de umax.",
+        controls: [
+          ["U", "velocidad placa U", -3, 3, 0.05],
+          ["d", "separacion d", 0.35, 2.8, 0.02],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["G", "G = -dp/dx", -6, 6, 0.05],
+          ["speed", "velocidad visual", 0, 3, 0.05]
+        ],
+        formula: [
+          String.raw`\(u(y)=\frac{U}{d}y+\frac{G}{2\mu}y(d-y)\)`,
+          String.raw`\(\frac{du}{dy}=\frac{U}{d}+\frac{G}{2\mu}(d-2y)\)`,
+          String.raw`\(y_0=\frac d2+\frac{\mu U}{Gd}\quad\text{si }0<y_0<d\)`,
+          String.raw`\(u_{max}=u(y_0)\), o bien el maximo queda en una pared si \(y_0\) cae afuera.`
+        ],
+        steps: [
+          String.raw`Es el mismo perfil de P1, pero ahora el dato pedido es la posicion del maximo.`,
+          String.raw`Se deriva \(u(y)\) y se iguala a cero. Eso da un punto critico \(y_0\).`,
+          String.raw`Si \(y_0\) no pertenece al intervalo fisico, el maximo real se busca entre \(y=0\) y \(y=d\).`,
+          String.raw`En la escena la marca sobre el perfil se mueve cuando competis placa y gradiente de presion.`
+        ],
+        build: buildP6I,
+        metrics: metricsP6I,
+        profile: profileP6I
+      },
+      {
+        id: "p6ii",
+        short: "P6ii",
+        title: "P6(ii): plano inclinado movil",
+        subtitle: "Pelicula con pared que se mueve cuesta arriba o cuesta abajo.",
+        controls: [
+          ["U", "velocidad de la pared U", -3, 3, 0.05],
+          ["theta", "angulo theta [deg]", 0, 70, 1],
+          ["d", "espesor d", 0.25, 2.2, 0.02],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["rho", "densidad rho", 0.2, 4, 0.05],
+          ["g", "gravedad g", 0, 15, 0.1],
+          ["speed", "velocidad visual", 0, 1.2, 0.02]
+        ],
+        formula: [
+          String.raw`\(u(y)=-U+\frac{\rho g\sin\theta}{\mu}\left(dy-\frac{y^2}{2}\right)\)`,
+          String.raw`\(\tau(y)=\mu u'(y)=\rho g\sin\theta(d-y)\)`,
+          String.raw`\sigma_{\text{pared}}=\tau(0)=\rho g d\sin\theta\)`,
+          String.raw`\(q=\int_0^d u\,dy=-Ud+\frac{\rho g\sin\theta}{3\mu}d^3\)`
+        ],
+        steps: [
+          String.raw`La gravedad aporta la misma parabola de P2.`,
+          String.raw`La pared movil cambia la condicion de no deslizamiento: \(u(0)=-U\).`,
+          String.raw`La superficie libre conserva esfuerzo nulo, \(u'(d)=0\).`,
+          String.raw`El esfuerzo de pared sale de \(\mu u'(0)\); el termino de Couette solo desplaza el perfil.`
+        ],
+        build: buildP6II,
+        metrics: metricsP6II,
+        profile: profileP6II
+      },
+      {
+        id: "p6iii",
+        short: "P6iii",
+        title: "P6(iii): Couette axial anular",
+        subtitle: "Dos cilindros coaxiales se desplazan axialmente y arrastran el fluido.",
+        controls: [
+          ["a", "radio interno a", 0.2, 1.3, 0.02],
+          ["b", "radio externo b", 0.45, 2.5, 0.02],
+          ["U1", "velocidad cilindro interno U1", -3, 3, 0.05],
+          ["U2", "velocidad cilindro externo U2", -3, 3, 0.05],
+          ["speed", "velocidad visual", 0, 1.8, 0.03]
+        ],
+        formula: [
+          String.raw`\(u(r)=A\ln r+B\)`,
+          String.raw`\(u(a)=U_1,\quad u(b)=U_2\)`,
+          String.raw`\(u(r)=U_1+(U_2-U_1)\frac{\ln(r/a)}{\ln(b/a)}\)`,
+          String.raw`\(Q=2\pi\int_a^b r\,u(r)\,dr\)`
+        ],
+        steps: [
+          String.raw`Para flujo axial estacionario en un anillo sin gradiente de presion: \(\frac1r(ru')'=0\).`,
+          String.raw`La integracion radial produce \(A\ln r+B\), no una recta en \(r\).`,
+          String.raw`Las velocidades de los cilindros fijan \(A\) y \(B\).`,
+          String.raw`El caudal se obtiene integrando sobre coronas \(2\pi r\,dr\).`
+        ],
+        build: buildP6III,
+        metrics: metricsP6III,
+        profile: profileP6III
+      }
+    );
+
+    modules.push(
+      {
+        id: "p8",
+        short: "P8",
+        title: "P8: primer problema de Stokes",
+        subtitle: "Arranque impulsivo de una placa y difusion de vorticidad.",
+        controls: [
+          ["U", "velocidad placa U", 0.1, 4, 0.05],
+          ["nu", "viscosidad cinematica nu", 0.05, 2.5, 0.02],
+          ["t", "tiempo t", 0.03, 4, 0.02],
+          ["ymax", "altura visual", 1.2, 5, 0.05],
+          ["speed", "velocidad visual", 0, 1.5, 0.03]
+        ],
+        formula: [
+          String.raw`\(\partial_t u=\nu\,\partial_{yy}u\)`,
+          String.raw`\(u(0,t)=U,\quad u(\infty,t)=0,\quad u(y,0)=0\)`,
+          String.raw`\(u(y,t)=U\,\operatorname{erfc}\!\left(\frac{y}{2\sqrt{\nu t}}\right)\)`,
+          String.raw`\(\omega_z=-\partial_yu=\frac{U}{\sqrt{\pi\nu t}}e^{-y^2/(4\nu t)}\)`
+        ],
+        steps: [
+          String.raw`El arranque no tiene escala de longitud externa: la unica combinacion es \(y/\sqrt{\nu t}\).`,
+          String.raw`La ecuacion se reduce a una ODE autosimilar para \(f(\eta)\), con \(\eta=y/(2\sqrt{\nu t})\).`,
+          String.raw`La solucion que conecta \(U\) en la pared con cero lejos es \(\operatorname{erfc}(\eta)\).`,
+          String.raw`La vorticidad nace concentrada en la pared y se ensancha como \(\sqrt{\nu t}\).`
+        ],
+        build: buildP8,
+        metrics: metricsP8,
+        profile: profileP8
+      },
+      {
+        id: "p9",
+        short: "P9",
+        title: "P9: vortice viscoso",
+        subtitle: "Difusion de la circulacion de un vortice puntual inicial.",
+        controls: [
+          ["Gamma", "circulacion Gamma0", 0.2, 10, 0.05],
+          ["nu", "viscosidad cinematica nu", 0.05, 2.5, 0.02],
+          ["t", "tiempo t", 0.03, 4, 0.02],
+          ["speed", "velocidad visual", 0, 1.5, 0.03]
+        ],
+        formula: [
+          String.raw`\(v_\theta(r,t)=\frac{\Gamma_0}{2\pi r}\left(1-e^{-r^2/(4\nu t)}\right)\)`,
+          String.raw`\(\Gamma(r,t)=2\pi r v_\theta=\Gamma_0\left(1-e^{-r^2/(4\nu t)}\right)\)`,
+          String.raw`\(r\ll\sqrt{4\nu t}:\quad v_\theta\simeq \frac{\Gamma_0 r}{8\pi\nu t}\)`,
+          String.raw`\(\Omega\simeq\Gamma_0/(8\pi\nu t)\)`
+        ],
+        steps: [
+          String.raw`La variable dependiente comoda es la circulacion encerrada \(\Gamma(r,t)\).`,
+          String.raw`La viscosidad suaviza el nucleo: ya no queda la singularidad \(1/r\) en \(r=0\).`,
+          String.raw`Lejos del nucleo se recupera aproximadamente el vortice irrotacional.`,
+          String.raw`Cerca del eje el fluido rota casi como cuerpo rigido con \(\Omega\propto 1/t\).`
+        ],
+        build: buildP9,
+        metrics: metricsP9,
+        profile: profileP9
+      },
+      {
+        id: "p10",
+        short: "P10",
+        title: "P10: placa oscilante",
+        subtitle: "Capa de Stokes con penetracion viscosa oscilatoria.",
+        controls: [
+          ["U0", "amplitud U0", 0.1, 4, 0.05],
+          ["nu", "viscosidad cinematica nu", 0.05, 2.5, 0.02],
+          ["omega", "frecuencia omega", 0.2, 10, 0.05],
+          ["ymax", "altura visual", 1.2, 5, 0.05],
+          ["speed", "velocidad visual", 0, 1.5, 0.03]
+        ],
+        formula: [
+          String.raw`\(u(y,t)=U_0e^{-y/\delta}\cos(\omega t-y/\delta)\)`,
+          String.raw`\(\delta=\sqrt{2\nu/\omega}\)`,
+          String.raw`\(\tilde v(y)=U_0e^{-(1+i)y/\delta}\)`,
+          String.raw`\(\tau(0,t)=\mu\partial_yu(0,t)\)`
+        ],
+        steps: [
+          String.raw`Se propone \(u=\operatorname{Re}\{\tilde v(y)e^{i\omega t}\}\).`,
+          String.raw`La ecuacion de difusion da \(\nu\tilde v''=i\omega\tilde v\).`,
+          String.raw`La raiz compleja produce dos efectos juntos: decaimiento exponencial y desfase con \(y\).`,
+          String.raw`La longitud de penetracion crece con \(\sqrt{\nu}\) y decrece con \(\sqrt{\omega}\).`
+        ],
+        build: buildP10,
+        metrics: metricsP10,
+        profile: profileP10
+      },
+      {
+        id: "p11",
+        short: "P11",
+        title: "P11: arranque en canal finito",
+        subtitle: "Placa inferior impulsiva y placa superior fija a distancia h.",
+        controls: [
+          ["U", "velocidad placa U", 0.1, 4, 0.05],
+          ["h", "separacion h", 0.5, 4, 0.05],
+          ["nu", "viscosidad cinematica nu", 0.05, 2.5, 0.02],
+          ["t", "tiempo t", 0.02, 4, 0.02],
+          ["terms", "terminos serie", 4, 50, 1],
+          ["speed", "velocidad visual", 0, 1.5, 0.03]
+        ],
+        formula: [
+          String.raw`\(u(y,t)=U\left(1-\frac yh\right)-\frac{2U}{\pi}\sum_{n=1}^{\infty}\frac1n\sin\frac{n\pi y}{h}\,e^{-n^2\pi^2\nu t/h^2}\)`,
+          String.raw`\(u(0,t)=U,\quad u(h,t)=0,\quad u(y,0)=0\)`,
+          String.raw`\(\omega_z=-\partial_yu\)`,
+          String.raw`\(h\to\infty\) recupera el semiespacio de P8 cerca de la pared.`
+        ],
+        steps: [
+          String.raw`Se separa una solucion estacionaria \(U(1-y/h)\) que ya cumple las condiciones de borde.`,
+          String.raw`El resto tiene bordes homogeneos y se expande en senos.`,
+          String.raw`Cada modo decae con tiempo caracteristico \(h^2/(n^2\pi^2\nu)\).`,
+          String.raw`Cuando \(h\) es grande y tiempos cortos, la pared superior todavia no se siente.`
+        ],
+        build: buildP11,
+        metrics: metricsP11,
+        profile: profileP11
+      },
+      {
+        id: "p12",
+        short: "P12",
+        title: "P12: capa limite de Blasius",
+        subtitle: "Placa semi-infinita y crecimiento delta ~ sqrt(nu x/U).",
+        controls: [
+          ["U", "velocidad externa U", 0.2, 4, 0.05],
+          ["nu", "viscosidad cinematica nu", 0.03, 1.5, 0.02],
+          ["xmax", "longitud placa", 2, 8, 0.05],
+          ["speed", "velocidad visual", 0, 1.5, 0.03]
+        ],
+        formula: [
+          String.raw`\(\psi=\sqrt{U\nu x}\,f(\eta),\qquad \eta=y\sqrt{\frac{U}{\nu x}}\)`,
+          String.raw`\(v_x=U f'(\eta)\)`,
+          String.raw`\(v_y=\frac12\sqrt{\frac{U\nu}{x}}\,[\eta f'(\eta)-f(\eta)]\)`,
+          String.raw`\(ff''+2f'''=0,\quad f(0)=f'(0)=0,\quad f'(\infty)=1\)`
+        ],
+        steps: [
+          String.raw`Las ecuaciones de capa limite conservan inercia longitudinal y difusion vertical.`,
+          String.raw`El analisis dimensional sugiere \(\eta=y\sqrt{U/(\nu x)}\).`,
+          String.raw`Las curvas de \(v_x/U\) constante son \(\eta\) constante, entonces \(y\propto\sqrt{x}\).`,
+          String.raw`La escena usa una aproximacion suave de \(f'(\eta)\) para mostrar el crecimiento de la capa.`
+        ],
+        build: buildP12,
+        metrics: metricsP12,
+        profile: profileP12
+      },
+      {
+        id: "p13",
+        short: "P13",
+        title: "P13: placa infinita giratoria",
+        subtitle: "Escala de capa limite por rotacion viscosa.",
+        controls: [
+          ["Omega", "velocidad angular Omega", 0.1, 8, 0.05],
+          ["nu", "viscosidad cinematica nu", 0.03, 2.5, 0.02],
+          ["R", "radio visual", 0.6, 3.0, 0.05],
+          ["speed", "velocidad visual", 0, 1.5, 0.03]
+        ],
+        formula: [
+          String.raw`\(\delta\propto\sqrt{\nu/\Omega}\)`,
+          String.raw`\([ \nu/\Omega ]=L^2\)`,
+          String.raw`\(v_\theta(r,0)=\Omega r\)`,
+          String.raw`\(v_\theta\) decae lejos del disco en una capa de espesor \(\delta\).`
+        ],
+        steps: [
+          String.raw`La rotacion introduce el tiempo \(1/\Omega\).`,
+          String.raw`La difusion viscosa durante ese tiempo recorre \(\sqrt{\nu/\Omega}\).`,
+          String.raw`Ese es el unico espesor posible por analisis dimensional.`,
+          String.raw`La escena marca la capa donde el fluido acompaña de manera apreciable al disco.`
+        ],
+        build: buildP13,
+        metrics: metricsP13,
+        profile: profileP13
+      }
+    );
+
+    const byId = Object.fromEntries(modules.map(m => [m.id, m]));
+
+    const renderer = new THREE.WebGLRenderer({ canvas: els.canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setClearColor(0xf7f8f4, 1);
+    if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) {
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+    }
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0xf7f8f4, 11, 24);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 100);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.07;
+    controls.screenSpacePanning = true;
+    controls.minDistance = 2.2;
+    controls.maxDistance = 22;
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    keyLight.position.set(4, 7, 6);
+    scene.add(keyLight);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x9fb3ad, 1.6));
+
+    const floor = new THREE.GridHelper(12, 12, 0xcbd5d0, 0xe4eae6);
+    floor.position.y = -1.55;
+    scene.add(floor);
+
+    const sceneRoot = new THREE.Group();
+    scene.add(sceneRoot);
+
+    window.renderMathNow = typeset;
+    setupModules();
+    setupEvents();
+    selectModule(readRequestedModule());
+    animate();
+
+    function setupModules() {
+      els.moduleList.innerHTML = modules.map(m => `
+        <button class="module-btn" type="button" data-module="${m.id}">
+          <span class="badge">${m.short}</span>
+          <span>
+            <span class="module-name">${m.title.replace(/^P\d+\S*:\s*/, "")}</span>
+            <span class="module-sub">${m.subtitle}</span>
+          </span>
+        </button>
+      `).join("");
+      for (const btn of els.moduleList.querySelectorAll("button")) {
+        btn.addEventListener("click", () => selectModule(btn.dataset.module));
+      }
+    }
+
+    function setupEvents() {
+      els.resetView.addEventListener("click", () => resetCamera(state.active));
+      els.resetParams.addEventListener("click", () => {
+        state.params[state.active] = structuredClone(defaults[state.active]);
+        renderPanel();
+        rebuildScene();
+      });
+      window.addEventListener("resize", resize);
+      resize();
+    }
+
+    function readRequestedModule() {
+      const requested = new URLSearchParams(location.search).get("module");
+      return byId[requested] ? requested : "p1";
+    }
+
+    function selectModule(id) {
+      state.active = id;
+      state.time = 0;
+      for (const btn of els.moduleList.querySelectorAll("button")) {
+        btn.classList.toggle("active", btn.dataset.module === id);
+      }
+      const m = byId[id];
+      els.title.textContent = m.title;
+      els.subtitle.textContent = m.subtitle;
+      renderPanel();
+      resetCamera(id);
+      rebuildScene();
+      const url = new URL(location.href);
+      url.searchParams.set("module", id);
+      history.replaceState(null, "", url);
+    }
+
+    function resetCamera(id) {
+      const presets = {
+        p1: { pos: [5.2, 3.2, 5.4], target: [0, .25, 0] },
+        p2: { pos: [5.2, 3.0, 5.4], target: [0, .15, 0] },
+        p3: { pos: [5.2, 3.0, 5.4], target: [0, .35, 0] },
+        p4: { pos: [5.7, 3.4, 4.6], target: [0, 0, 0] },
+        p5: { pos: [5.7, 3.4, 4.6], target: [0, 0, 0] },
+        p6i: { pos: [5.2, 3.2, 5.4], target: [0, .25, 0] },
+        p6ii: { pos: [5.2, 3.0, 5.4], target: [0, .15, 0] },
+        p6iii: { pos: [5.7, 3.4, 4.6], target: [0, 0, 0] },
+        p6tc: { pos: [5.6, 4.7, 8.0], target: [0, 2.8, 0] },
+        p7: { pos: [5.0, 2.7, 5.6], target: [0, 0, 0] },
+        p8: { pos: [5.1, 3.0, 5.6], target: [0, 1.0, 0] },
+        p9: { pos: [4.8, 4.5, 5.4], target: [0, 0, 0] },
+        p10: { pos: [5.1, 3.0, 5.6], target: [0, 1.0, 0] },
+        p11: { pos: [5.2, 3.2, 5.4], target: [0, .55, 0] },
+        p12: { pos: [5.5, 3.1, 5.8], target: [0, .45, 0] },
+        p13: { pos: [4.8, 4.4, 5.6], target: [0, .3, 0] }
+      }[id] || { pos: [5.2, 3.2, 5.4], target: [0, .4, 0] };
+      camera.position.set(...presets.pos);
+      controls.target.set(...presets.target);
+      controls.update();
+    }
+
+    function renderPanel() {
+      const m = byId[state.active];
+      const q = state.params[state.active];
+      els.controls.innerHTML = m.controls.map(([key, label, min, max, step]) => `
+        <div class="control">
+          <label for="range-${key}">${label}</label>
+          <input id="num-${key}" type="number" min="${min}" max="${max}" step="${step}" value="${fmtInput(q[key])}">
+          <input id="range-${key}" type="range" min="${min}" max="${max}" step="${step}" value="${fmtInput(q[key])}">
+        </div>
+      `).join("");
+      for (const [key] of m.controls) {
+        const range = document.getElementById(`range-${key}`);
+        const num = document.getElementById(`num-${key}`);
+        const update = value => {
+          const parsed = Number(value);
+          if (!Number.isFinite(parsed)) return;
+          q[key] = parsed;
+          range.value = String(parsed);
+          num.value = fmtInput(parsed);
+          enforceGeometryBounds(key);
+          rebuildScene();
+        };
+        range.addEventListener("input", () => update(range.value));
+        num.addEventListener("input", () => update(num.value));
+      }
+      els.steps.innerHTML = m.steps.map((s, i) => `<div class="step"><b>${i + 1}</b><span>${s}</span></div>`).join("");
+      els.formula.innerHTML = m.formula.map(s => `<div>${s}</div>`).join("");
+      typeset();
+      drawProfile();
+      renderMetrics();
+    }
+
+    function enforceGeometryBounds(changedKey) {
+      if (state.active !== "p6tc") return;
+      const q = state.params.p6tc;
+      if (q.b <= q.a + 0.08) {
+        if (changedKey === "a") q.b = q.a + 0.08;
+        else q.a = Math.max(0.25, q.b - 0.08);
+        renderPanel();
+      }
+    }
+
+    function typeset() {
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([els.steps, els.formula]).catch(() => {});
+      }
+    }
+
+    function renderMetrics() {
+      const m = byId[state.active];
+      const rows = m.metrics().slice(0, 6);
+      els.metrics.innerHTML = rows.map(([label, value]) => `
+        <div class="metric"><span>${label}</span><b>${value}</b></div>
+      `).join("");
+    }
+
+    function rebuildScene() {
+      while (sceneRoot.children.length) sceneRoot.remove(sceneRoot.children[0]);
+      state.particles = null;
+      state.staticTick = () => {};
+      byId[state.active].build(sceneRoot);
+      drawProfile();
+      drawSceneProfile();
+      renderMetrics();
+    }
+
+    function resize() {
+      const rect = els.canvas.getBoundingClientRect();
+      const w = Math.max(1, rect.width);
+      const h = Math.max(1, rect.height);
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+
+    function animate(now = performance.now()) {
+      const dt = Math.min(0.045, Math.max(0.001, (now - (state.last || now)) / 1000));
+      state.last = now;
+      state.time += dt;
+      if (state.particles) updateParticles(dt);
+      state.staticTick(dt);
+      controls.update();
+      renderer.render(scene, camera);
+      state.frame = requestAnimationFrame(animate);
+    }
+
+    function updateParticles(dt) {
+      const pack = state.particles;
+      pack.update(dt);
+      pack.geometry.attributes.position.needsUpdate = true;
+      pack.geometry.attributes.color.needsUpdate = true;
+    }
+
+    function createParticlePack(count, size, update) {
+      const geometry = new THREE.BufferGeometry();
+      const pos = new Float32Array(count * 3);
+      const col = new Float32Array(count * 3);
+      geometry.setAttribute("position", new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+      geometry.setAttribute("color", new THREE.BufferAttribute(col, 3).setUsage(THREE.DynamicDrawUsage));
+      const material = new THREE.PointsMaterial({
+        size: size * 1.32,
+        sizeAttenuation: true,
+        vertexColors: true,
+        transparent: true,
+        opacity: 1,
+        depthTest: true,
+        depthWrite: false
+      });
+      const points = new THREE.Points(geometry, material);
+      state.particles = { geometry, positions: pos, colors: col, points, update };
+      return state.particles;
+    }
+
+    function buildP1(root) {
+      const q = state.params.p1;
+      const d = Math.max(.05, q.d);
+      const L = 6.0, W = 3.0;
+      const maxAbs = sampleMax(y => Math.abs(uP1(y)), 0, d);
+      state.maxSpeed = maxAbs;
+
+      addBox(root, [L, .08, W], [0, 0, 0], 0x74837c, 1);
+      addBox(root, [L, .08, W], [0, d, 0], 0x87948d, 1);
+      addBox(root, [L, d, W], [0, d / 2, 0], 0x54b5a7, .24);
+      addFrameBox(root, L, d, W, [0, d / 2, 0], 0x48615c);
+      const tickTopPlate = addMovingBelt(root, d + .075, [-1.1, 0, 1.1], L, q.U, 0x0b7f79);
+
+      for (let i = 0; i <= 7; i++) {
+        const y = d * i / 7;
+        const u = uP1(y);
+        addVelocityArrow(root, [-2.65, y, W / 2 + .38], [Math.sign(u || 1), 0, 0], .18 + .95 * Math.abs(u) / maxAbs, colorForSpeed(Math.abs(u) / maxAbs));
+      }
+
+      const data = Array.from({ length: 520 }, () => ({
+        x: rand(-L / 2, L / 2),
+        y: rand(.06, d - .06),
+        z: rand(-W / 2 + .06, W / 2 - .06)
+      }));
+      const pack = createParticlePack(data.length, .045, dt => {
+        const speed = q.speed * .52;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i];
+          const u = uP1(p.y);
+          p.x += u * speed * dt;
+          p.x = wrap(p.x, -L / 2, L / 2);
+          writeParticle(pack, i, p.x, p.y, p.z, Math.abs(u) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.profileData = profileP1();
+      state.staticTick = dt => tickTopPlate(dt * q.speed);
+    }
+
+    function buildP2(root) {
+      const q = state.params.p2;
+      const theta = THREE.MathUtils.degToRad(q.theta);
+      const d = Math.max(.05, q.d);
+      const L = 6.0, W = 3.0;
+      const maxAbs = Math.max(.01, uFilm(d));
+      state.maxSpeed = maxAbs;
+
+      const film = new THREE.Group();
+      film.rotation.z = -theta;
+      root.add(film);
+      addBox(film, [L, .08, W], [0, -.05, 0], 0xaeb7b1, .96);
+      addBox(film, [L, d, W], [0, d / 2, 0], 0x67bca9, .22);
+      addFrameBox(film, L, d, W, [0, d / 2, 0], 0x536963);
+      const tickSurface = addMovingBelt(film, d + .045, [-1.05, 0, 1.05], L, uFilm(d), 0x087f79);
+
+      for (let i = 0; i <= 7; i++) {
+        const y = d * i / 7;
+        const u = uFilm(y);
+        addVelocityArrow(film, [-2.65, y, W / 2 + .38], [1, 0, 0], .12 + .95 * u / maxAbs, colorForSpeed(u / maxAbs));
+      }
+      addVelocityArrow(root, [2.7, 2.1, 0], [0, -1, 0], .8, 0x6d7480);
+
+      const data = Array.from({ length: 520 }, () => ({
+        x: rand(-L / 2, L / 2),
+        y: rand(.045, d - .035),
+        z: rand(-W / 2 + .06, W / 2 - .06)
+      }));
+      const pack = createParticlePack(data.length, .045, dt => {
+        const speed = q.speed * .36;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i];
+          const u = uFilm(p.y);
+          p.x += u * speed * dt;
+          p.x = wrap(p.x, -L / 2, L / 2);
+          const v = new THREE.Vector3(p.x, p.y, p.z).applyEuler(film.rotation);
+          writeParticle(pack, i, v.x, v.y, v.z, u / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.profileData = profileP2();
+      state.staticTick = dt => tickSurface(dt * q.speed * .36);
+    }
+
+    function buildP4(root) {
+      const q = state.params.p4;
+      const a = Math.max(.05, q.a);
+      const L = 6.2;
+      const maxAbs = Math.max(.01, uPipe(0));
+      state.maxSpeed = maxAbs;
+      const wallMat = new THREE.MeshStandardMaterial({
+        color: 0x7bc4b6,
+        transparent: true,
+        opacity: .18,
+        roughness: .65,
+        metalness: .03,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const tube = new THREE.Mesh(new THREE.CylinderGeometry(a, a, L, 80, 1, true), wallMat);
+      tube.rotation.z = Math.PI / 2;
+      root.add(tube);
+      addTubeRings(root, a, L);
+
+      for (let i = 0; i <= 6; i++) {
+        const r = a * i / 6;
+        const u = uPipe(r);
+        addVelocityArrow(root, [-2.9, r, a + .35], [1, 0, 0], .13 + .95 * u / maxAbs, colorForSpeed(u / maxAbs));
+        if (i > 0) addVelocityArrow(root, [-2.9, -r, a + .35], [1, 0, 0], .13 + .95 * u / maxAbs, colorForSpeed(u / maxAbs));
+      }
+
+      const data = Array.from({ length: 620 }, () => {
+        const rr = a * Math.sqrt(Math.random());
+        const th = rand(0, Math.PI * 2);
+        return { x: rand(-L / 2, L / 2), y: rr * Math.cos(th), z: rr * Math.sin(th) };
+      });
+      const pack = createParticlePack(data.length, .045, dt => {
+        const speed = q.speed * .55;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i];
+          const r = Math.hypot(p.y, p.z);
+          const u = uPipe(r);
+          p.x += u * speed * dt;
+          p.x = wrap(p.x, -L / 2, L / 2);
+          writeParticle(pack, i, p.x, p.y, p.z, u / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.profileData = profileP4();
+      state.staticTick = () => {};
+    }
+
+    function buildP6TC(root) {
+      const q = state.params.p6tc;
+      if (q.b <= q.a + .08) q.b = q.a + .08;
+      const a = Math.max(.05, q.a);
+      const b = Math.max(a + .08, q.b);
+      const h = q.height;
+      const maxAbs = sampleMax(r => Math.abs(vTheta(r)), a, b);
+      state.maxSpeed = maxAbs;
+
+      const outer = new THREE.Mesh(
+        new THREE.CylinderGeometry(b, b, h, 96, 1, true),
+        new THREE.MeshStandardMaterial({
+          color: 0x8ccbc0,
+          transparent: true,
+          opacity: .14,
+          roughness: .55,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        })
+      );
+      outer.position.y = h / 2;
+      root.add(outer);
+
+      const inner = new THREE.Mesh(
+        new THREE.CylinderGeometry(a, a, h, 96, 1, false),
+        new THREE.MeshStandardMaterial({ color: 0xf4f6f2, roughness: .62, metalness: .04 })
+      );
+      inner.position.y = h / 2;
+      root.add(inner);
+      const innerMarker = addRotatingCylinderMarkers(root, a + .018, h, 0x174f9a, 4, .06);
+      const outerMarker = addRotatingCylinderMarkers(root, b + .018, h, 0x087f79, 5, .045);
+
+      addCylinderEdges(root, a, h, 0x2e3d39, .85);
+      addCylinderEdges(root, b, h, 0x2e3d39, .55);
+      addTCBands(root, a, b, h, maxAbs);
+
+      const unstable = rayleighUnstable();
+      if (unstable) addVortexCells(root, a, b, h);
+
+      const data = Array.from({ length: 780 }, () => ({
+        r: Math.sqrt(rand(a * a, b * b)),
+        th: rand(0, Math.PI * 2),
+        y: rand(.04, h - .04),
+        phase: rand(0, Math.PI * 2)
+      }));
+      const pack = createParticlePack(data.length, .04, dt => {
+        const speed = q.speed * .72;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i];
+          const vt = vTheta(p.r);
+          const omega = vt / Math.max(.04, p.r);
+          p.th += omega * speed * dt;
+          if (unstable) {
+            p.y += 0.18 * speed * dt * Math.sin(4 * Math.PI * p.y / h + p.phase + state.time);
+            p.y = wrap(p.y, .04, h - .04);
+            p.r += 0.035 * speed * dt * Math.sin(4 * Math.PI * p.y / h + p.th);
+            p.r = clamp(p.r, a + .025, b - .025);
+          }
+          const x = p.r * Math.cos(p.th);
+          const z = p.r * Math.sin(p.th);
+          writeParticle(pack, i, x, p.y, z, Math.abs(vt) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.profileData = profileP6TC();
+      state.staticTick = dt => {
+        inner.rotation.y += q.omega1 * dt * q.speed * .25;
+        outer.rotation.y += q.omega2 * dt * q.speed * .16;
+        innerMarker.rotation.y += q.omega1 * dt * q.speed * .25;
+        outerMarker.rotation.y += q.omega2 * dt * q.speed * .16;
+      };
+    }
+
+    function buildP7(root) {
+      const q = state.params.p7;
+      const R = Math.max(.05, q.D / 2);
+      const L = 7.2, W = 4.0, H = 3.4;
+      const maxAbs = Math.max(.1, q.U * 1.55);
+      state.maxSpeed = maxAbs;
+
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(R, 64, 32),
+        new THREE.MeshStandardMaterial({ color: 0xf4f5ee, roughness: .55, metalness: .05 })
+      );
+      root.add(sphere);
+      root.add(new THREE.LineSegments(
+        new THREE.WireframeGeometry(new THREE.SphereGeometry(R * 1.01, 24, 12)),
+        new THREE.LineBasicMaterial({ color: 0x97aaa2, transparent: true, opacity: .45 })
+      ));
+      addVelocityArrow(root, [-3.2, 1.35, 0], [1, 0, 0], 1.05, 0x087f79);
+
+      addSphereStreamlines(root, R, q.U, L);
+
+      const data = Array.from({ length: 720 }, () => randomWakeParticle(L, W, H, R));
+      const pack = createParticlePack(data.length, .052, dt => {
+        const speed = q.speed * .58;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i];
+          const v = sphereVelocity(p.x, p.y, p.z, R, q.U);
+          p.x += v.x * speed * dt;
+          p.y += v.y * speed * dt;
+          p.z += v.z * speed * dt;
+          const rr = Math.hypot(p.x, p.y, p.z);
+          if (rr < R * 1.06) {
+            const s = R * 1.08 / Math.max(.001, rr);
+            p.x *= s; p.y *= s; p.z *= s;
+          }
+          if (p.x > L / 2) Object.assign(p, randomWakeParticle(L, W, H, R, true));
+          if (Math.abs(p.y) > H / 2 || Math.abs(p.z) > W / 2) Object.assign(p, randomWakeParticle(L, W, H, R, true));
+          const mag = Math.hypot(v.x, v.y, v.z);
+          writeParticle(pack, i, p.x, p.y, p.z, mag / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.profileData = profileP7();
+      state.staticTick = () => {};
+    }
+
+    function buildP3(root) {
+      const q = state.params.p3;
+      const theta = THREE.MathUtils.degToRad(q.theta);
+      const h1 = Math.max(.04, q.h1), h2 = Math.max(.04, q.h2);
+      const D = h1 + h2, L = 6, W = 3;
+      const maxAbs = sampleMax(y => Math.abs(uTwoFilm(y)), 0, D);
+      const film = new THREE.Group();
+      film.rotation.z = -theta;
+      root.add(film);
+      addBox(film, [L, .08, W], [0, -.05, 0], 0x9ca8a1, 1);
+      addBox(film, [L, h1, W], [0, h1 / 2, 0], 0x57b7aa, .26);
+      addBox(film, [L, h2, W], [0, h1 + h2 / 2, 0], 0x80c8a6, .25);
+      addFrameBox(film, L, D, W, [0, D / 2, 0], 0x536963);
+      addInterfaceLine(film, h1, L, W, 0x2f6f83);
+      const tickSurface = addMovingBelt(film, D + .045, [-1.05, 0, 1.05], L, uTwoFilm(D), 0x087f79);
+      const data = Array.from({ length: 640 }, () => ({ x: rand(-L / 2, L / 2), y: rand(.04, D - .035), z: rand(-W / 2 + .06, W / 2 - .06) }));
+      const pack = createParticlePack(data.length, .047, dt => {
+        const speed = q.speed * .34;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], u = uTwoFilm(p.y);
+          p.x = wrap(p.x + u * speed * dt, -L / 2, L / 2);
+          const v = new THREE.Vector3(p.x, p.y, p.z).applyEuler(film.rotation);
+          writeParticle(pack, i, v.x, v.y, v.z, Math.abs(u) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = dt => tickSurface(dt * q.speed * .34);
+    }
+
+    function buildP5(root) {
+      const q = state.params.p5;
+      const a = Math.max(.05, q.a), L = 3.9;
+      const mu = Math.max(.001, q.rho * q.nu);
+      const baseVis = clamp(a * .36, .23, .62);
+      const cases = [
+        { f: .62, z: -1.45, color: 0x315f95 },
+        { f: 1.00, z: 0, color: 0x087f79 },
+        { f: 1.38, z: 1.45, color: 0xc08a2a }
+      ].map(c => ({
+        ...c,
+        visR: baseVis * c.f,
+        physR: a * c.f,
+        qRel: c.f ** 4
+      }));
+      const maxAbs = Math.max(.01, ...cases.map(c => q.G / (4 * mu) * c.physR * c.physR));
+
+      for (const c of cases) {
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x7bc4b6,
+          transparent: true,
+          opacity: c.f === 1 ? .22 : .14,
+          roughness: .65,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+        const tube = new THREE.Mesh(new THREE.CylinderGeometry(c.visR, c.visR, L, 72, 1, true), mat);
+        tube.rotation.z = Math.PI / 2;
+        tube.position.z = c.z;
+        root.add(tube);
+        addTubeRingsAt(root, c.visR, L, c.z, c.f === 1 ? .82 : .55);
+        addVelocityArrow(root, [-2.45, c.visR + .18, c.z], [1, 0, 0], .35 + .55 * c.f * c.f, c.color);
+        const barLen = .22 + .55 * c.qRel;
+        addBox(root, [barLen, .16, .18], [2.25 + barLen / 2, -c.visR - .38, c.z], c.color, .92);
+      }
+
+      const data = [];
+      for (const c of cases) {
+        const n = Math.round(190 * (0.75 + c.f));
+        for (let i = 0; i < n; i++) {
+          const rr = c.visR * Math.sqrt(Math.random()), th = rand(0, Math.PI * 2);
+          data.push({ c, x: rand(-L / 2, L / 2), rr, th });
+        }
+      }
+
+      const pack = createParticlePack(data.length, .046, dt => {
+        const speed = q.speed * .42;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i];
+          const radialRatio = p.rr / Math.max(.001, p.c.visR);
+          const rPhys = p.c.physR * radialRatio;
+          const u = Math.max(0, q.G / (4 * mu) * (p.c.physR * p.c.physR - rPhys * rPhys));
+          p.x = wrap(p.x + u * speed * dt, -L / 2, L / 2);
+          writeParticle(pack, i, p.x, p.rr * Math.cos(p.th), p.c.z + p.rr * Math.sin(p.th), u / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = () => {};
+    }
+
+    function buildP6I(root) {
+      const q = state.params.p6i;
+      const d = Math.max(.05, q.d), L = 6, W = 3;
+      const maxAbs = sampleMax(y => Math.abs(uCP(q, y)), 0, d);
+      addBox(root, [L, .08, W], [0, 0, 0], 0x74837c, 1);
+      addBox(root, [L, .08, W], [0, d, 0], 0x87948d, 1);
+      addBox(root, [L, d, W], [0, d / 2, 0], 0x54b5a7, .24);
+      addFrameBox(root, L, d, W, [0, d / 2, 0], 0x48615c);
+      const tickTopPlate = addMovingBelt(root, d + .075, [-1.1, 0, 1.1], L, q.U, 0x0b7f79);
+      const y0 = clamp(d / 2 + Math.max(.001, q.mu) * q.U / (Math.abs(q.G) < 1e-6 ? 1e-6 : q.G * d), 0, d);
+      addVelocityArrow(root, [2.45, y0, W / 2 + .42], [1, 0, 0], .55, 0xc08a2a);
+      const data = Array.from({ length: 520 }, () => ({ x: rand(-L / 2, L / 2), y: rand(.06, d - .06), z: rand(-W / 2 + .06, W / 2 - .06) }));
+      const pack = createParticlePack(data.length, .047, dt => {
+        const speed = q.speed * .52;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], u = uCP(q, p.y);
+          p.x = wrap(p.x + u * speed * dt, -L / 2, L / 2);
+          writeParticle(pack, i, p.x, p.y, p.z, Math.abs(u) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = dt => tickTopPlate(dt * q.speed);
+    }
+
+    function buildP6II(root) {
+      const q = state.params.p6ii;
+      const theta = THREE.MathUtils.degToRad(q.theta);
+      const d = Math.max(.05, q.d), L = 6, W = 3;
+      const maxAbs = sampleMax(y => Math.abs(uP6II(y)), 0, d);
+      const film = new THREE.Group();
+      film.rotation.z = -theta;
+      root.add(film);
+      addBox(film, [L, .08, W], [0, -.05, 0], 0x9ca8a1, 1);
+      addBox(film, [L, d, W], [0, d / 2, 0], 0x67bca9, .23);
+      addFrameBox(film, L, d, W, [0, d / 2, 0], 0x536963);
+      const tickWall = addMovingBelt(film, -.11, [-1.05, 0, 1.05], L, -q.U, 0x9b3f34);
+      const data = Array.from({ length: 540 }, () => ({ x: rand(-L / 2, L / 2), y: rand(.045, d - .035), z: rand(-W / 2 + .06, W / 2 - .06) }));
+      const pack = createParticlePack(data.length, .047, dt => {
+        const speed = q.speed * .35;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], u = uP6II(p.y);
+          p.x = wrap(p.x + u * speed * dt, -L / 2, L / 2);
+          const v = new THREE.Vector3(p.x, p.y, p.z).applyEuler(film.rotation);
+          writeParticle(pack, i, v.x, v.y, v.z, Math.abs(u) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = dt => tickWall(dt * q.speed);
+    }
+
+    function buildP6III(root) {
+      const q = state.params.p6iii;
+      if (q.b <= q.a + .08) q.b = q.a + .08;
+      const a = Math.max(.05, q.a), b = Math.max(a + .08, q.b), L = 6.2;
+      const maxAbs = sampleMax(r => Math.abs(uAnnular(r)), a, b);
+      const outer = new THREE.Mesh(new THREE.CylinderGeometry(b, b, L, 96, 1, true), new THREE.MeshStandardMaterial({ color: 0x8ccbc0, transparent: true, opacity: .16, roughness: .6, side: THREE.DoubleSide, depthWrite: false }));
+      outer.rotation.z = Math.PI / 2;
+      root.add(outer);
+      const inner = new THREE.Mesh(new THREE.CylinderGeometry(a, a, L, 96, 1, false), new THREE.MeshStandardMaterial({ color: 0xf4f6f2, roughness: .62 }));
+      inner.rotation.z = Math.PI / 2;
+      root.add(inner);
+      addTubeRings(root, a, L); addTubeRings(root, b, L);
+      addVelocityArrow(root, [-2.8, b + .45, 0], [Math.sign(q.U1 || 1), 0, 0], .35 + .6 * Math.abs(q.U1) / Math.max(.1, maxAbs), 0x315f95);
+      addVelocityArrow(root, [-2.8, -b - .45, 0], [Math.sign(q.U2 || 1), 0, 0], .35 + .6 * Math.abs(q.U2) / Math.max(.1, maxAbs), 0x087f79);
+      const data = Array.from({ length: 650 }, () => {
+        const rr = Math.sqrt(rand(a * a, b * b)), th = rand(0, Math.PI * 2);
+        return { x: rand(-L / 2, L / 2), y: rr * Math.cos(th), z: rr * Math.sin(th) };
+      });
+      const pack = createParticlePack(data.length, .047, dt => {
+        const speed = q.speed * .55;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], r = Math.hypot(p.y, p.z), u = uAnnular(r);
+          p.x = wrap(p.x + u * speed * dt, -L / 2, L / 2);
+          writeParticle(pack, i, p.x, p.y, p.z, Math.abs(u) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = () => {};
+    }
+
+    function buildP8(root) {
+      const q = state.params.p8, L = 6, W = 3, H = q.ymax;
+      const maxAbs = Math.max(.1, q.U);
+      addBox(root, [L, .08, W], [0, 0, 0], 0x74837c, 1);
+      addBox(root, [L, H, W], [0, H / 2, 0], 0x67bca9, .16);
+      addFrameBox(root, L, H, W, [0, H / 2, 0], 0x536963);
+      addDiffusionSheet(root, 2 * Math.sqrt(q.nu * q.t), L, W, 0xc08a2a);
+      const tickPlate = addMovingBelt(root, .075, [-1.1, 0, 1.1], L, q.U, 0x0b7f79);
+      const data = Array.from({ length: 620 }, () => ({ x: rand(-L / 2, L / 2), y: rand(.04, H - .04), z: rand(-W / 2 + .06, W / 2 - .06) }));
+      const pack = createParticlePack(data.length, .047, dt => {
+        const speed = q.speed * .55;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], u = uStokes1(p.y);
+          p.x = wrap(p.x + u * speed * dt, -L / 2, L / 2);
+          writeParticle(pack, i, p.x, p.y, p.z, u / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = dt => tickPlate(dt * q.speed);
+    }
+
+    function buildP9(root) {
+      const q = state.params.p9, R = 3.0, core = Math.sqrt(4 * q.nu * q.t);
+      addDisk(root, core, .025, 0x67bca9, .22, .02);
+      for (let r = core; r <= R; r += .45) addCircleLine(root, r, 0, 0x8aa39a, .42);
+      const maxAbs = sampleMax(r => Math.abs(vVortex(r)), .04, R);
+      const data = Array.from({ length: 720 }, () => ({ r: R * Math.sqrt(Math.random()), th: rand(0, Math.PI * 2), y: rand(-.04, .04) }));
+      const pack = createParticlePack(data.length, .048, dt => {
+        const speed = q.speed * .75;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], vt = vVortex(Math.max(.035, p.r));
+          p.th += vt / Math.max(.04, p.r) * speed * dt;
+          writeParticle(pack, i, p.r * Math.cos(p.th), p.y, p.r * Math.sin(p.th), Math.abs(vt) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = () => {};
+    }
+
+    function buildP10(root) {
+      const q = state.params.p10, L = 6, W = 3, H = q.ymax;
+      addBox(root, [L, .08, W], [0, 0, 0], 0x74837c, 1);
+      addBox(root, [L, H, W], [0, H / 2, 0], 0x67bca9, .14);
+      addFrameBox(root, L, H, W, [0, H / 2, 0], 0x536963);
+      const wave = addOscillatingSheet(root, L, W, H);
+      const tickPlate = addMovingBelt(root, .075, [-1.1, 0, 1.1], L, q.U0, 0x0b7f79);
+      const data = Array.from({ length: 620 }, () => ({ x: rand(-L / 2, L / 2), y: rand(.04, H - .04), z: rand(-W / 2 + .06, W / 2 - .06) }));
+      const pack = createParticlePack(data.length, .047, dt => {
+        const maxAbs = Math.max(.1, q.U0);
+        const speed = q.speed * .45;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], u = uOscillating(p.y, state.time);
+          p.x = wrap(p.x + u * speed * dt, -L / 2, L / 2);
+          writeParticle(pack, i, p.x, p.y, p.z, Math.abs(u) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = dt => { tickPlate(dt * q.speed * Math.cos(q.omega * state.time)); wave.rotation.y = .03 * Math.sin(q.omega * state.time); };
+    }
+
+    function buildP11(root) {
+      const q = state.params.p11, h = q.h, L = 6, W = 3;
+      const maxAbs = Math.max(.1, q.U);
+      addBox(root, [L, .08, W], [0, 0, 0], 0x74837c, 1);
+      addBox(root, [L, .08, W], [0, h, 0], 0x87948d, 1);
+      addBox(root, [L, h, W], [0, h / 2, 0], 0x67bca9, .18);
+      addFrameBox(root, L, h, W, [0, h / 2, 0], 0x536963);
+      const tickPlate = addMovingBelt(root, .075, [-1.1, 0, 1.1], L, q.U, 0x0b7f79);
+      const data = Array.from({ length: 620 }, () => ({ x: rand(-L / 2, L / 2), y: rand(.04, h - .04), z: rand(-W / 2 + .06, W / 2 - .06) }));
+      const pack = createParticlePack(data.length, .047, dt => {
+        const speed = q.speed * .55;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], u = uFiniteStart(p.y);
+          p.x = wrap(p.x + u * speed * dt, -L / 2, L / 2);
+          writeParticle(pack, i, p.x, p.y, p.z, Math.abs(u) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = dt => tickPlate(dt * q.speed);
+    }
+
+    function buildP12(root) {
+      const q = state.params.p12, L = q.xmax, W = 3, H = 2.4;
+      addBox(root, [L, .06, W], [0, 0, 0], 0x74837c, 1);
+      addBoundaryLayerSurface(root, L, W);
+      addVelocityArrow(root, [-L / 2 - .35, 1.2, 0], [1, 0, 0], 1.0, 0x087f79);
+      const data = Array.from({ length: 700 }, () => ({ x: rand(-L / 2, L / 2), y: rand(.04, H), z: rand(-W / 2, W / 2) }));
+      const pack = createParticlePack(data.length, .047, dt => {
+        const speed = q.speed * .55;
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], xphys = Math.max(.05, p.x + L / 2 + .05), eta = p.y * Math.sqrt(q.U / Math.max(.001, q.nu * xphys));
+          const vx = q.U * blasiusFp(eta);
+          p.x += vx * speed * dt;
+          if (p.x > L / 2) { p.x = -L / 2; p.y = rand(.04, H); p.z = rand(-W / 2, W / 2); }
+          writeParticle(pack, i, p.x, p.y, p.z, vx / Math.max(.1, q.U));
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = () => {};
+    }
+
+    function buildP13(root) {
+      const q = state.params.p13, R = q.R, H = Math.max(.6, 4 * Math.sqrt(q.nu / Math.max(.001, q.Omega)));
+      const disk = addDisk(root, R, .08, 0x8f9c95, 1, 0);
+      addDisk(root, R, H, 0x67bca9, .13, H / 2);
+      const marker = addRotatingDiskMarker(root, R);
+      const data = Array.from({ length: 650 }, () => ({ r: R * Math.sqrt(Math.random()), th: rand(0, Math.PI * 2), y: rand(.04, H) }));
+      const pack = createParticlePack(data.length, .047, dt => {
+        const speed = q.speed;
+        const maxAbs = Math.max(.1, q.Omega * R);
+        for (let i = 0; i < data.length; i++) {
+          const p = data[i], vt = diskVtheta(p.r, p.y);
+          p.th -= vt / Math.max(.04, p.r) * speed * dt;
+          writeParticle(pack, i, p.r * Math.cos(p.th), p.y, p.r * Math.sin(p.th), Math.abs(vt) / maxAbs);
+        }
+      });
+      root.add(pack.points);
+      state.staticTick = dt => { disk.rotation.y -= q.Omega * q.speed * dt * .3; marker.rotation.y -= q.Omega * q.speed * dt * .3; };
+    }
+
+    function addTCBands(root, a, b, h, maxAbs) {
+      const q = state.params.p6tc;
+      const unstable = rayleighUnstable();
+      const layers = 44;
+      const r = a + .62 * (b - a);
+      for (let i = 0; i < layers; i++) {
+        const y = h * (i + .5) / layers;
+        const base = Math.abs(vTheta(r)) / maxAbs;
+        const band = unstable ? .22 * (1 + Math.sin(i * .92 + q.omega1 * .35)) : .06 * (1 + Math.sin(i * .7));
+        const t = clamp(base * .75 + band, 0, 1);
+        const mesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(r, r, h / layers * .86, 96, 1, true),
+          new THREE.MeshStandardMaterial({
+            color: colorForSpeed(t),
+            transparent: true,
+            opacity: .42,
+            side: THREE.DoubleSide,
+            roughness: .6,
+            depthWrite: false
+          })
+        );
+        mesh.position.y = y;
+        root.add(mesh);
+      }
+    }
+
+    function addVortexCells(root, a, b, h) {
+      const mat = new THREE.LineBasicMaterial({ color: 0x087f79, transparent: true, opacity: .68 });
+      const cells = Math.max(3, Math.round(h / Math.max(.35, (b - a) * .82)));
+      const r = (a + b) / 2;
+      for (let c = 0; c < cells; c++) {
+        const y0 = h * (c + .5) / cells;
+        const pts = [];
+        for (let i = 0; i <= 180; i++) {
+          const th = i / 180 * Math.PI * 2;
+          const yy = y0 + Math.sin(th) * h / cells * .28;
+          const rr = r + Math.cos(th) * (b - a) * .23;
+          pts.push(new THREE.Vector3(rr * Math.cos(th * 1.8), yy, rr * Math.sin(th * 1.8)));
+        }
+        root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+      }
+    }
+
+    function addTubeRings(root, a, L) {
+      const mat = new THREE.LineBasicMaterial({ color: 0x2e3d39, transparent: true, opacity: .7 });
+      for (const x of [-L / 2, L / 2]) {
+        const pts = [];
+        for (let i = 0; i <= 128; i++) {
+          const th = i / 128 * Math.PI * 2;
+          pts.push(new THREE.Vector3(x, a * Math.cos(th), a * Math.sin(th)));
+        }
+        root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+      }
+      for (let k = 0; k < 4; k++) {
+        const th = k * Math.PI / 2;
+        const pts = [new THREE.Vector3(-L / 2, a * Math.cos(th), a * Math.sin(th)), new THREE.Vector3(L / 2, a * Math.cos(th), a * Math.sin(th))];
+        root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+      }
+    }
+
+    function addTubeRingsAt(root, a, L, z0, opacity) {
+      const mat = new THREE.LineBasicMaterial({ color: 0x2e3d39, transparent: true, opacity });
+      for (const x of [-L / 2, L / 2]) {
+        const pts = [];
+        for (let i = 0; i <= 128; i++) {
+          const th = i / 128 * Math.PI * 2;
+          pts.push(new THREE.Vector3(x, a * Math.cos(th), z0 + a * Math.sin(th)));
+        }
+        root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+      }
+      for (let k = 0; k < 4; k++) {
+        const th = k * Math.PI / 2;
+        const pts = [new THREE.Vector3(-L / 2, a * Math.cos(th), z0 + a * Math.sin(th)), new THREE.Vector3(L / 2, a * Math.cos(th), z0 + a * Math.sin(th))];
+        root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+      }
+    }
+
+    function addCylinderEdges(root, r, h, color, opacity) {
+      const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+      for (const y of [0, h]) {
+        const pts = [];
+        for (let i = 0; i <= 128; i++) {
+          const th = i / 128 * Math.PI * 2;
+          pts.push(new THREE.Vector3(r * Math.cos(th), y, r * Math.sin(th)));
+        }
+        root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+      }
+      for (let k = 0; k < 4; k++) {
+        const th = k * Math.PI / 2;
+        const pts = [new THREE.Vector3(r * Math.cos(th), 0, r * Math.sin(th)), new THREE.Vector3(r * Math.cos(th), h, r * Math.sin(th))];
+        root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+      }
+    }
+
+    function addBox(root, size, pos, color, opacity) {
+      const mat = new THREE.MeshStandardMaterial({
+        color,
+        transparent: opacity < 1,
+        opacity,
+        roughness: .72,
+        metalness: .03,
+        side: THREE.DoubleSide,
+        depthWrite: opacity >= .5
+      });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), mat);
+      mesh.position.set(...pos);
+      root.add(mesh);
+      return mesh;
+    }
+
+    function addFrameBox(root, L, H, W, center, color) {
+      const x = L / 2, y = H / 2, z = W / 2;
+      const corners = [
+        [-x,-y,-z],[x,-y,-z],[x,y,-z],[-x,y,-z],
+        [-x,-y,z],[x,-y,z],[x,y,z],[-x,y,z]
+      ].map(p => new THREE.Vector3(p[0] + center[0], p[1] + center[1], p[2] + center[2]));
+      const idx = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+      const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: .58 });
+      for (const [a, b] of idx) root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([corners[a], corners[b]]), mat));
+    }
+
+    function addVelocityArrow(root, origin, direction, length, color) {
+      const dir = new THREE.Vector3(...direction);
+      if (dir.lengthSq() < 1e-8) dir.set(1, 0, 0);
+      dir.normalize();
+      const arrow = new THREE.ArrowHelper(dir, new THREE.Vector3(...origin), length, color, Math.min(.16, length * .28), Math.min(.1, length * .18));
+      root.add(arrow);
+    }
+
+    function addSceneProfile(root, id) {
+      const mod = byId[id];
+      if (!mod?.profile) return;
+      const data = mod.profile().filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+      if (data.length < 2) return;
+
+      const cfg = sceneProfileConfig(id);
+      const group = new THREE.Group();
+      group.position.set(...cfg.pos);
+      group.rotation.set(...cfg.rot);
+      group.scale.setScalar(cfg.scale);
+
+      const w = 1.25, h = .95;
+      const xs = data.map(p => p.x), ys = data.map(p => p.y);
+      const xmin = Math.min(...xs), xmax = Math.max(...xs);
+      const ymin = Math.min(...ys), ymax = Math.max(...ys);
+      const sx = x => .12 + (x - xmin) / Math.max(1e-8, xmax - xmin) * (w - .22);
+      const sy = y => .12 + (y - ymin) / Math.max(1e-8, ymax - ymin) * (h - .22);
+
+      const bg = new THREE.Mesh(
+        new THREE.PlaneGeometry(w, h),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .78, side: THREE.DoubleSide, depthWrite: false })
+      );
+      bg.position.set(w / 2, h / 2, -.012);
+      group.add(bg);
+
+      const axisMat = new THREE.LineBasicMaterial({ color: 0x8aa39a, transparent: true, opacity: .82 });
+      const curveMat = new THREE.LineBasicMaterial({ color: 0x087f79, transparent: true, opacity: .96 });
+      const barMat = new THREE.LineBasicMaterial({ color: 0x315f95, transparent: true, opacity: .55 });
+
+      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(.1, .1, 0), new THREE.Vector3(w - .06, .1, 0)
+      ]), axisMat));
+      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(.1, .1, 0), new THREE.Vector3(.1, h - .06, 0)
+      ]), axisMat));
+
+      if (xmin < 0 && xmax > 0) {
+        const zx = sx(0);
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(zx, .1, .004), new THREE.Vector3(zx, h - .06, .004)
+        ]), new THREE.LineBasicMaterial({ color: 0xc08a2a, transparent: true, opacity: .65 })));
+      }
+
+      const zeroX = xmin < 0 && xmax > 0 ? sx(0) : sx(xmin);
+      for (let i = 0; i <= 6; i++) {
+        const p = data[Math.round(i * (data.length - 1) / 6)];
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(zeroX, sy(p.y), .006),
+          new THREE.Vector3(sx(p.x), sy(p.y), .006)
+        ]), barMat));
+      }
+
+      const pts = data.map(p => new THREE.Vector3(sx(p.x), sy(p.y), .01));
+      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), curveMat));
+      root.add(group);
+    }
+
+    function sceneProfileConfig(id) {
+      const base = { pos: [-2.9, .16, -2.05], rot: [0, 0, 0], scale: 1 };
+      return {
+        p1: base,
+        p2: { pos: [-2.9, .25, -2.05], rot: [0, 0, 0], scale: 1 },
+        p3: { pos: [-2.9, .25, -2.05], rot: [0, 0, 0], scale: 1 },
+        p4: { pos: [-2.75, -1.28, -2.05], rot: [0, 0, 0], scale: 1 },
+        p5: { pos: [-2.75, -1.28, -2.05], rot: [0, 0, 0], scale: 1 },
+        p6i: base,
+        p6ii: { pos: [-2.9, .25, -2.05], rot: [0, 0, 0], scale: 1 },
+        p6iii: { pos: [-2.75, -1.28, -2.05], rot: [0, 0, 0], scale: 1 },
+        p6tc: { pos: [-2.25, .15, -2.15], rot: [0, 0, 0], scale: 1.05 },
+        p7: { pos: [-2.95, -1.25, -2.0], rot: [0, 0, 0], scale: 1 },
+        p8: { pos: [-2.9, .2, -2.05], rot: [0, 0, 0], scale: 1 },
+        p9: { pos: [-2.1, .08, -2.25], rot: [0, 0, 0], scale: 1.05 },
+        p10: { pos: [-2.9, .2, -2.05], rot: [0, 0, 0], scale: 1 },
+        p11: { pos: [-2.9, .16, -2.05], rot: [0, 0, 0], scale: 1 },
+        p12: { pos: [-2.95, .2, -2.05], rot: [0, 0, 0], scale: 1 },
+        p13: { pos: [-2.1, .1, -2.15], rot: [0, 0, 0], scale: 1.05 }
+      }[id] || base;
+    }
+
+    function addMovingBelt(root, y, zValues, L, U, color) {
+      const group = new THREE.Group();
+      const markers = [];
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: .45, metalness: .05 });
+      for (const z of zValues) {
+        for (let i = 0; i < 9; i++) {
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(.34, .035, .055), mat);
+          mesh.position.set(-L / 2 + i * L / 8, y, z);
+          mesh.userData.x = mesh.position.x;
+          group.add(mesh);
+          markers.push(mesh);
+        }
+      }
+      root.add(group);
+      return dt => {
+        const ux = Number.isFinite(U) ? U : 0;
+        for (const mesh of markers) {
+          mesh.userData.x = wrap(mesh.userData.x + ux * dt * .55, -L / 2, L / 2);
+          mesh.position.x = mesh.userData.x;
+        }
+      };
+    }
+
+    function addRotatingCylinderMarkers(root, radius, h, color, count, width) {
+      const group = new THREE.Group();
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: .45, metalness: .04 });
+      for (let i = 0; i < count; i++) {
+        const th = i * Math.PI * 2 / count;
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, h * .88, .035), mat);
+        mesh.position.set(radius * Math.cos(th), h / 2, radius * Math.sin(th));
+        mesh.rotation.y = -th;
+        group.add(mesh);
+      }
+      root.add(group);
+      return group;
+    }
+
+    function addRotatingDiskMarker(root, R) {
+      const group = new THREE.Group();
+      const mat = new THREE.MeshStandardMaterial({ color: 0x087f79, roughness: .45 });
+      const a = new THREE.Mesh(new THREE.BoxGeometry(R * 1.65, .04, .06), mat);
+      a.position.y = .08;
+      group.add(a);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(.06, .04, R * .9), mat);
+      b.position.set(R * .38, .08, 0);
+      group.add(b);
+      root.add(group);
+      return group;
+    }
+
+    function addInterfaceLine(root, y, L, W, color) {
+      const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: .9 });
+      const pts = [
+        new THREE.Vector3(-L / 2, y, -W / 2),
+        new THREE.Vector3(L / 2, y, -W / 2),
+        new THREE.Vector3(L / 2, y, W / 2),
+        new THREE.Vector3(-L / 2, y, W / 2),
+        new THREE.Vector3(-L / 2, y, -W / 2)
+      ];
+      root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+    }
+
+    function addDiffusionSheet(root, y, L, W, color) {
+      const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: .75 });
+      const yy = clamp(y, .05, 5);
+      root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-L / 2, yy, -W / 2),
+        new THREE.Vector3(L / 2, yy, -W / 2),
+        new THREE.Vector3(L / 2, yy, W / 2),
+        new THREE.Vector3(-L / 2, yy, W / 2),
+        new THREE.Vector3(-L / 2, yy, -W / 2)
+      ]), mat));
+    }
+
+    function addDisk(root, radius, height, color, opacity, y) {
+      const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius, radius, height, 96, 1, false),
+        new THREE.MeshStandardMaterial({ color, transparent: opacity < 1, opacity, roughness: .62, side: THREE.DoubleSide, depthWrite: opacity >= .5 })
+      );
+      mesh.position.y = y;
+      root.add(mesh);
+      return mesh;
+    }
+
+    function addCircleLine(root, radius, y, color, opacity) {
+      const pts = [];
+      for (let i = 0; i <= 160; i++) {
+        const th = i * Math.PI * 2 / 160;
+        pts.push(new THREE.Vector3(radius * Math.cos(th), y, radius * Math.sin(th)));
+      }
+      root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color, transparent: true, opacity })));
+    }
+
+    function addOscillatingSheet(root, L, W, H) {
+      const group = new THREE.Group();
+      const mat = new THREE.LineBasicMaterial({ color: 0x087f79, transparent: true, opacity: .42 });
+      for (let k = 1; k <= 5; k++) {
+        const y = H * k / 6;
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(-L / 2, y, -W / 2),
+          new THREE.Vector3(L / 2, y, -W / 2)
+        ]), mat));
+      }
+      root.add(group);
+      return group;
+    }
+
+    function addBoundaryLayerSurface(root, L, W) {
+      const q = state.params.p12;
+      const pts = [];
+      for (let i = 0; i <= 90; i++) {
+        const x = .05 + L * i / 90;
+        const delta = 4.9 * Math.sqrt(q.nu * x / Math.max(.001, q.U));
+        pts.push(new THREE.Vector3(-L / 2 + x, delta, -W / 2));
+      }
+      for (let i = 90; i >= 0; i--) {
+        const x = .05 + L * i / 90;
+        const delta = 4.9 * Math.sqrt(q.nu * x / Math.max(.001, q.U));
+        pts.push(new THREE.Vector3(-L / 2 + x, delta, W / 2));
+      }
+      const geom = new THREE.BufferGeometry().setFromPoints(pts);
+      const mat = new THREE.LineBasicMaterial({ color: 0x087f79, transparent: true, opacity: .7 });
+      root.add(new THREE.LineLoop(geom, mat));
+    }
+
+    function addSphereStreamlines(root, R, U, L) {
+      const mat = new THREE.LineBasicMaterial({ color: 0x6f9188, transparent: true, opacity: .72 });
+      const seeds = [-1.75, -1.25, -.82, .82, 1.25, 1.75];
+      for (const z of [-.95, 0, .95]) {
+        for (const y0 of seeds) {
+          const pts = [];
+          let p = new THREE.Vector3(-L / 2, y0, z * (Math.abs(y0) < 1 ? .45 : .8));
+          for (let i = 0; i < 260; i++) {
+            pts.push(p.clone());
+            const v = sphereVelocity(p.x, p.y, p.z, R, U).normalize().multiplyScalar(.045);
+            p = p.clone().add(v);
+            const r = p.length();
+            if (r < R * 1.06) p.multiplyScalar(R * 1.06 / Math.max(.001, r));
+            if (p.x > L / 2) break;
+          }
+          root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+        }
+      }
+    }
+
+    function sphereVelocity(x, y, z, R, U) {
+      const r = Math.max(R * 1.03, Math.hypot(x, y, z));
+      const er = new THREE.Vector3(x / r, y / r, z / r);
+      const ex = new THREE.Vector3(1, 0, 0);
+      const cos = x / r;
+      const eTheta = ex.clone().sub(er.clone().multiplyScalar(cos)).multiplyScalar(-1);
+      if (eTheta.lengthSq() < 1e-8) eTheta.set(0, 1, 0);
+      eTheta.normalize();
+      const rr3 = (R * R * R) / (r * r * r);
+      const vr = U * cos * (1 - rr3);
+      const vt = -U * Math.sqrt(Math.max(0, 1 - cos * cos)) * (1 + .5 * rr3);
+      return er.multiplyScalar(vr).add(eTheta.multiplyScalar(vt));
+    }
+
+    function writeParticle(pack, i, x, y, z, t) {
+      const j = i * 3;
+      pack.positions[j] = x;
+      pack.positions[j + 1] = y;
+      pack.positions[j + 2] = z;
+      const c = new THREE.Color(colorForSpeed(t));
+      pack.colors[j] = c.r;
+      pack.colors[j + 1] = c.g;
+      pack.colors[j + 2] = c.b;
+    }
+
+    function colorForSpeed(t) {
+      t = clamp(Number.isFinite(t) ? t : 0, 0, 1);
+      const scaled = t * (palette.length - 1);
+      const i = Math.min(palette.length - 2, Math.floor(scaled));
+      const f = scaled - i;
+      return new THREE.Color(palette[i]).lerp(new THREE.Color(palette[i + 1]), f).getHex();
+    }
+
+    function drawProfile() {
+      const ctx = els.profile.getContext("2d");
+      const W = els.profile.width;
+      const H = els.profile.height;
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = "#d7dfda";
+      ctx.lineWidth = 2;
+      for (let i = 1; i < 5; i++) {
+        const y = 28 + i * (H - 62) / 5;
+        ctx.beginPath(); ctx.moveTo(42, y); ctx.lineTo(W - 24, y); ctx.stroke();
+      }
+
+      const data = byId[state.active].profile();
+      state.profileData = data;
+      const xs = data.map(p => p.x);
+      const ys = data.map(p => p.y);
+      const xmin = Math.min(...xs), xmax = Math.max(...xs);
+      const ymin = Math.min(...ys), ymax = Math.max(...ys);
+      const padL = 48, padR = 24, padT = 24, padB = 38;
+      const sx = x => padL + (x - xmin) / Math.max(1e-8, xmax - xmin) * (W - padL - padR);
+      const sy = y => H - padB - (y - ymin) / Math.max(1e-8, ymax - ymin) * (H - padT - padB);
+
+      ctx.strokeStyle = "#9facaa";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.lineTo(W - padR, H - padB); ctx.stroke();
+
+      ctx.strokeStyle = "#087f79";
+      ctx.lineWidth = 5;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      data.forEach((p, i) => {
+        const xx = sx(p.x), yy = sy(p.y);
+        if (i) ctx.lineTo(xx, yy); else ctx.moveTo(xx, yy);
+      });
+      ctx.stroke();
+
+      ctx.fillStyle = "#17211f";
+      ctx.font = "24px ui-sans-serif, system-ui";
+      ctx.fillText(profileLabel(), padL, 22);
+      ctx.fillStyle = "#64706b";
+      ctx.font = "21px ui-sans-serif, system-ui";
+      ctx.fillText(fmt(xmin), padL, H - 10);
+      const maxText = fmt(xmax);
+      ctx.fillText(maxText, W - padR - ctx.measureText(maxText).width, H - 10);
+    }
+
+    function drawSceneProfile() {
+      const ctx = els.sceneProfile.getContext("2d");
+      const W = els.sceneProfile.width;
+      const H = els.sceneProfile.height;
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "rgba(255,255,255,.92)";
+      ctx.fillRect(0, 0, W, H);
+
+      const data = byId[state.active].profile().filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+      if (data.length < 2) return;
+      const xs = data.map(p => p.x), ys = data.map(p => p.y);
+      const xmin = Math.min(...xs), xmax = Math.max(...xs);
+      const ymin = Math.min(...ys), ymax = Math.max(...ys);
+      const padL = 42, padR = 22, padT = 38, padB = 34;
+      const sx = x => padL + (x - xmin) / Math.max(1e-8, xmax - xmin) * (W - padL - padR);
+      const sy = y => H - padB - (y - ymin) / Math.max(1e-8, ymax - ymin) * (H - padT - padB);
+
+      ctx.strokeStyle = "#d7dfda";
+      ctx.lineWidth = 2;
+      for (let i = 1; i < 4; i++) {
+        const y = padT + i * (H - padT - padB) / 4;
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(W - padR, y);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "#8aa39a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(padL, padT);
+      ctx.lineTo(padL, H - padB);
+      ctx.lineTo(W - padR, H - padB);
+      ctx.stroke();
+
+      if (xmin < 0 && xmax > 0) {
+        const zx = sx(0);
+        ctx.strokeStyle = "#c08a2a";
+        ctx.beginPath();
+        ctx.moveTo(zx, padT);
+        ctx.lineTo(zx, H - padB);
+        ctx.stroke();
+      }
+
+      const zeroX = xmin < 0 && xmax > 0 ? sx(0) : sx(xmin);
+      ctx.strokeStyle = "rgba(49,95,149,.55)";
+      ctx.lineWidth = 2;
+      for (let i = 0; i <= 5; i++) {
+        const p = data[Math.round(i * (data.length - 1) / 5)];
+        ctx.beginPath();
+        ctx.moveTo(zeroX, sy(p.y));
+        ctx.lineTo(sx(p.x), sy(p.y));
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "#087f79";
+      ctx.lineWidth = 5;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      data.forEach((p, i) => {
+        const x = sx(p.x), y = sy(p.y);
+        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      });
+      ctx.stroke();
+
+      ctx.fillStyle = "#17211f";
+      ctx.font = "bold 24px ui-sans-serif, system-ui";
+      ctx.fillText(profileLabel(), 18, 26);
+      ctx.fillStyle = "#64706b";
+      ctx.font = "18px ui-sans-serif, system-ui";
+      ctx.fillText(fmt(xmin), padL, H - 9);
+      const maxText = fmt(xmax);
+      ctx.fillText(maxText, W - padR - ctx.measureText(maxText).width, H - 9);
+    }
+
+    function profileLabel() {
+      return {
+        p1: "u(y)",
+        p2: "u(y)",
+        p3: "u(y)",
+        p4: "u(r)",
+        p5: "Q(a)",
+        p6i: "u(y)",
+        p6ii: "u(y)",
+        p6iii: "u(r)",
+        p6tc: "v_theta(r)",
+        p7: "F(Re)",
+        p8: "u(y,t)",
+        p9: "v_theta(r,t)",
+        p10: "u(y,t)",
+        p11: "u(y,t)",
+        p12: "v_x/U",
+        p13: "v_theta(y)"
+      }[state.active];
+    }
+
+    function uP1(y) {
+      const q = state.params.p1;
+      const d = Math.max(.001, q.d);
+      const mu = Math.max(.001, q.mu);
+      return q.U * y / d + (q.G / (2 * mu)) * y * (d - y);
+    }
+
+    function uFilm(y) {
+      const q = state.params.p2;
+      const mu = Math.max(.001, q.mu);
+      const d = Math.max(.001, q.d);
+      const s = Math.sin(THREE.MathUtils.degToRad(q.theta));
+      return q.rho * q.g * s / mu * (d * y - y * y / 2);
+    }
+
+    function uPipe(r) {
+      const q = state.params.p4;
+      const mu = Math.max(.001, q.mu);
+      const a = Math.max(.001, q.a);
+      return Math.max(0, q.G / (4 * mu) * (a * a - r * r));
+    }
+
+    function tcAB() {
+      const q = state.params.p6tc;
+      const a = Math.max(.001, q.a);
+      const b = Math.max(a + .001, q.b);
+      const den = b * b - a * a;
+      return {
+        A: (q.omega2 * b * b - q.omega1 * a * a) / den,
+        B: (a * a * b * b * (q.omega1 - q.omega2)) / den
+      };
+    }
+
+    function vTheta(r) {
+      const { A, B } = tcAB();
+      return A * r + B / Math.max(.001, r);
+    }
+
+    function rayleighUnstable() {
+      const q = state.params.p6tc;
+      const a = q.a, b = Math.max(q.a + .08, q.b);
+      const { A, B } = tcAB();
+      for (let i = 0; i < 40; i++) {
+        const r = a + (b - a) * i / 39;
+        const l = A * r * r + B;
+        if (4 * A * r * l < 0) return true;
+      }
+      return false;
+    }
+
+    function reynolds() {
+      const q = state.params.p7;
+      return q.rho * q.U * q.D / Math.max(.001, q.mu);
+    }
+
+    function uCP(q, y) {
+      const d = Math.max(.001, q.d), mu = Math.max(.001, q.mu);
+      return q.U * y / d + (q.G / (2 * mu)) * y * (d - y);
+    }
+
+    function uTwoFilm(y) {
+      const q = state.params.p3;
+      const h1 = Math.max(.001, q.h1), h2 = Math.max(.001, q.h2);
+      const s = Math.sin(THREE.MathUtils.degToRad(q.theta));
+      const g = q.g * s;
+      if (y <= h1) {
+        return g / Math.max(.001, q.mu1) * (q.rho1 * (h1 * y - y * y / 2) + q.rho2 * h2 * y);
+      }
+      const uInt = g / Math.max(.001, q.mu1) * (q.rho1 * h1 * h1 / 2 + q.rho2 * h2 * h1);
+      const D = h1 + h2;
+      return uInt + q.rho2 * g / Math.max(.001, q.mu2) * (D * (y - h1) - (y * y - h1 * h1) / 2);
+    }
+
+    function uP5Pipe(r) {
+      const q = state.params.p5;
+      const a = Math.max(.001, q.a), mu = Math.max(.001, q.rho * q.nu);
+      return Math.max(0, q.G / (4 * mu) * (a * a - r * r));
+    }
+
+    function uP6II(y) {
+      const q = state.params.p6ii;
+      const d = Math.max(.001, q.d), mu = Math.max(.001, q.mu);
+      const s = Math.sin(THREE.MathUtils.degToRad(q.theta));
+      return -q.U + q.rho * q.g * s / mu * (d * y - y * y / 2);
+    }
+
+    function uAnnular(r) {
+      const q = state.params.p6iii;
+      const a = Math.max(.001, q.a), b = Math.max(a + .001, q.b);
+      return q.U1 + (q.U2 - q.U1) * Math.log(Math.max(a, r) / a) / Math.log(b / a);
+    }
+
+    function uStokes1(y) {
+      const q = state.params.p8;
+      return q.U * erfc(y / (2 * Math.sqrt(Math.max(.0001, q.nu * q.t))));
+    }
+
+    function vVortex(r) {
+      const q = state.params.p9;
+      r = Math.max(.001, r);
+      return q.Gamma / (2 * Math.PI * r) * (1 - Math.exp(-r * r / (4 * Math.max(.0001, q.nu * q.t))));
+    }
+
+    function uOscillating(y, t) {
+      const q = state.params.p10;
+      const delta = Math.sqrt(2 * q.nu / Math.max(.001, q.omega));
+      return q.U0 * Math.exp(-y / delta) * Math.cos(q.omega * t - y / delta);
+    }
+
+    function uFiniteStart(y) {
+      const q = state.params.p11;
+      const h = Math.max(.001, q.h), nu = Math.max(.001, q.nu), t = Math.max(.0001, q.t);
+      let u = q.U * (1 - y / h);
+      const terms = Math.max(4, Math.min(80, Math.round(q.terms)));
+      for (let n = 1; n <= terms; n++) {
+        u -= 2 * q.U / Math.PI * Math.sin(n * Math.PI * y / h) / n * Math.exp(-n * n * Math.PI * Math.PI * nu * t / (h * h));
+      }
+      return u;
+    }
+
+    function blasiusFp(eta) {
+      return clamp(1 - Math.exp(-0.28 * eta * eta - 0.035 * eta ** 3), 0, 1);
+    }
+
+    function diskVtheta(r, y) {
+      const q = state.params.p13;
+      const delta = Math.sqrt(q.nu / Math.max(.001, q.Omega));
+      return q.Omega * r * Math.exp(-y / Math.max(.001, delta));
+    }
+
+    function erfc(x) {
+      const z = Math.abs(x);
+      const t = 1 / (1 + .5 * z);
+      const ans = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (.37409196 + t * (.09678418 + t * (-.18628806 + t * (.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-.82215223 + t * .17087277)))))))));
+      return x >= 0 ? ans : 2 - ans;
+    }
+
+    function metricsP1() {
+      const q = state.params.p1;
+      const d = Math.max(.001, q.d);
+      const mu = Math.max(.001, q.mu);
+      const umax = sampleMax(y => Math.abs(uP1(y)), 0, d);
+      const flow = q.U * d / 2 + q.G * d ** 3 / (12 * mu);
+      return [
+        ["max |u|", fmt(umax)],
+        ["q por ancho", fmt(flow)],
+        ["tau(0)", fmt(mu * q.U / d + q.G * d / 2)],
+        ["tau(d)", fmt(mu * q.U / d - q.G * d / 2)]
+      ];
+    }
+
+    function metricsP2() {
+      const q = state.params.p2;
+      const d = Math.max(.001, q.d);
+      const umax = uFilm(d);
+      return [
+        ["u_max", fmt(umax)],
+        ["u_prom", fmt(2 * umax / 3)],
+        ["caudal/ancho", fmt(2 * umax * d / 3)],
+        ["m_dot/ancho", fmt(q.rho * 2 * umax * d / 3)]
+      ];
+    }
+
+    function metricsP3() {
+      const q = state.params.p3;
+      const h1 = Math.max(.001, q.h1), h2 = Math.max(.001, q.h2), D = h1 + h2;
+      const umax = sampleMax(y => Math.abs(uTwoFilm(y)), 0, D);
+      const flow = integrateTrap(uTwoFilm, 0, D, 220);
+      return [
+        ["max |u|", fmt(umax)],
+        ["u interfase", fmt(uTwoFilm(h1))],
+        ["q por ancho", fmt(flow)],
+        ["h total", fmt(D)]
+      ];
+    }
+
+    function metricsP4() {
+      const q = state.params.p4;
+      const a = Math.max(.001, q.a);
+      const mu = Math.max(.001, q.mu);
+      return [
+        ["u_max", fmt(uPipe(0))],
+        ["Q", fmt(Math.PI * q.G * a ** 4 / (8 * mu))],
+        ["u_prom", fmt(uPipe(0) / 2)],
+        ["tau_w", fmt(-q.G * a / 2)]
+      ];
+    }
+
+    function metricsP5() {
+      const q = state.params.p5;
+      const a = Math.max(.001, q.a), mu = Math.max(.001, q.rho * q.nu);
+      const Q = Math.PI * q.G * a ** 4 / (8 * mu);
+      return [
+        ["Q exacto", fmt(Q)],
+        ["Q si 2a", fmt(16 * Q)],
+        ["mu=rho nu", fmt(mu)],
+        ["u_max", fmt(uP5Pipe(0))]
+      ];
+    }
+
+    function metricsP6I() {
+      const q = state.params.p6i;
+      const d = Math.max(.001, q.d), mu = Math.max(.001, q.mu);
+      const raw = d / 2 + mu * q.U / ((Math.abs(q.G) < 1e-8 ? 1e-8 : q.G) * d);
+      const y0 = clamp(raw, 0, d);
+      return [
+        ["y0 calculado", fmt(raw)],
+        ["y max fisico", fmt(y0)],
+        ["u(y max)", fmt(uCP(q, y0))],
+        ["q por ancho", fmt(q.U * d / 2 + q.G * d ** 3 / (12 * mu))]
+      ];
+    }
+
+    function metricsP6II() {
+      const q = state.params.p6ii;
+      const d = Math.max(.001, q.d), s = Math.sin(THREE.MathUtils.degToRad(q.theta));
+      return [
+        ["sigma pared", fmt(q.rho * q.g * d * s)],
+        ["u superficie", fmt(uP6II(d))],
+        ["q por ancho", fmt(-q.U * d + q.rho * q.g * s * d ** 3 / (3 * Math.max(.001, q.mu)))],
+        ["tau libre", "0"]
+      ];
+    }
+
+    function metricsP6III() {
+      const q = state.params.p6iii;
+      const a = Math.max(.001, q.a), b = Math.max(a + .001, q.b);
+      const Q = 2 * Math.PI * integrateTrap(r => r * uAnnular(r), a, b, 260);
+      return [
+        ["Q", fmt(Q)],
+        ["u(a)", fmt(uAnnular(a))],
+        ["u(b)", fmt(uAnnular(b))],
+        ["ln(b/a)", fmt(Math.log(b / a))]
+      ];
+    }
+
+    function metricsP6TC() {
+      const q = state.params.p6tc;
+      const { A, B } = tcAB();
+      const a = Math.max(.001, q.a);
+      const b = Math.max(a + .001, q.b);
+      const gap = b - a;
+      const taLike = q.rho * Math.abs(q.omega1) * a * gap / Math.max(.001, q.mu);
+      return [
+        ["A", fmt(A)],
+        ["B", fmt(B)],
+        ["tau(a)", fmt(-2 * q.mu * B / (a * a))],
+        ["N/L", fmt(-4 * Math.PI * q.mu * B)],
+        ["Ta visual", fmt(taLike)],
+        ["Rayleigh", rayleighUnstable() ? "tendencia inestable" : "estable inviscido"]
+      ];
+    }
+
+    function metricsP7() {
+      const q = state.params.p7;
+      const Re = reynolds();
+      const stokes = 3 * Math.PI * q.mu * q.D * q.U;
+      const inertial = .5 * q.Cd * q.rho * q.U ** 2 * Math.PI * q.D ** 2 / 4;
+      const terminal = (q.rhoS - q.rho) * 9.8 * q.D ** 2 / (18 * Math.max(.001, q.mu));
+      return [
+        ["Re", fmt(Re)],
+        ["F Stokes", fmt(stokes)],
+        ["F alto Re", fmt(inertial)],
+        ["U_t Stokes", fmt(terminal)]
+      ];
+    }
+
+    function metricsP8() {
+      const q = state.params.p8;
+      const delta = 2 * Math.sqrt(q.nu * q.t);
+      return [
+        ["2 sqrt(nu t)", fmt(delta)],
+        ["u(delta)", fmt(uStokes1(delta))],
+        ["omega pared", fmt(q.U / Math.sqrt(Math.PI * q.nu * q.t))],
+        ["t para L=1", fmt(1 / Math.max(.001, q.nu))]
+      ];
+    }
+
+    function metricsP9() {
+      const q = state.params.p9;
+      const core = Math.sqrt(4 * q.nu * q.t);
+      return [
+        ["sqrt(4 nu t)", fmt(core)],
+        ["Omega nucleo", fmt(q.Gamma / (8 * Math.PI * q.nu * q.t))],
+        ["v(core)", fmt(vVortex(core))],
+        ["Gamma(inf)", fmt(q.Gamma)]
+      ];
+    }
+
+    function metricsP10() {
+      const q = state.params.p10;
+      const delta = Math.sqrt(2 * q.nu / Math.max(.001, q.omega));
+      return [
+        ["delta", fmt(delta)],
+        ["u(delta)", fmt(uOscillating(delta, state.time))],
+        ["periodo", fmt(2 * Math.PI / q.omega)],
+        ["fase en delta", "-1 rad"]
+      ];
+    }
+
+    function metricsP11() {
+      const q = state.params.p11;
+      const h = Math.max(.001, q.h);
+      return [
+        ["u(h/2)", fmt(uFiniteStart(h / 2))],
+        ["t_h", fmt(h * h / Math.max(.001, q.nu))],
+        ["terminos", fmt(Math.round(q.terms))],
+        ["u estacionario", "lineal"]
+      ];
+    }
+
+    function metricsP12() {
+      const q = state.params.p12;
+      const delta = 4.9 * Math.sqrt(q.nu * q.xmax / Math.max(.001, q.U));
+      return [
+        ["delta(xmax)", fmt(delta)],
+        ["Re_x", fmt(q.U * q.xmax / Math.max(.001, q.nu))],
+        ["escala", "sqrt(x)"],
+        ["vx borde", "U"]
+      ];
+    }
+
+    function metricsP13() {
+      const q = state.params.p13;
+      const delta = Math.sqrt(q.nu / Math.max(.001, q.Omega));
+      return [
+        ["delta", fmt(delta)],
+        ["v borde", fmt(q.Omega * q.R)],
+        ["tiempo rot", fmt(1 / q.Omega)],
+        ["escala", "sqrt(nu/Omega)"]
+      ];
+    }
+
+    function profileP1() {
+      const d = Math.max(.001, state.params.p1.d);
+      return Array.from({ length: 90 }, (_, i) => {
+        const y = d * i / 89;
+        return { x: uP1(y), y };
+      });
+    }
+
+    function profileP2() {
+      const d = Math.max(.001, state.params.p2.d);
+      return Array.from({ length: 90 }, (_, i) => {
+        const y = d * i / 89;
+        return { x: uFilm(y), y };
+      });
+    }
+
+    function profileP3() {
+      const q = state.params.p3;
+      const D = Math.max(.001, q.h1 + q.h2);
+      return Array.from({ length: 100 }, (_, i) => {
+        const y = D * i / 99;
+        return { x: uTwoFilm(y), y };
+      });
+    }
+
+    function profileP4() {
+      const a = Math.max(.001, state.params.p4.a);
+      return Array.from({ length: 120 }, (_, i) => {
+        const r = -a + 2 * a * i / 119;
+        return { x: uPipe(Math.abs(r)), y: r };
+      });
+    }
+
+    function profileP5() {
+      const q = state.params.p5;
+      return Array.from({ length: 90 }, (_, i) => {
+        const a = 0.15 + 2.25 * i / 89;
+        const Q = Math.PI * q.G * a ** 4 / (8 * Math.max(.001, q.rho * q.nu));
+        return { x: Q, y: a };
+      });
+    }
+
+    function profileP6I() {
+      const q = state.params.p6i;
+      const d = Math.max(.001, q.d);
+      return Array.from({ length: 90 }, (_, i) => {
+        const y = d * i / 89;
+        return { x: uCP(q, y), y };
+      });
+    }
+
+    function profileP6II() {
+      const d = Math.max(.001, state.params.p6ii.d);
+      return Array.from({ length: 90 }, (_, i) => {
+        const y = d * i / 89;
+        return { x: uP6II(y), y };
+      });
+    }
+
+    function profileP6III() {
+      const q = state.params.p6iii;
+      const a = Math.max(.001, q.a), b = Math.max(a + .001, q.b);
+      return Array.from({ length: 110 }, (_, i) => {
+        const r = a + (b - a) * i / 109;
+        return { x: uAnnular(r), y: r };
+      });
+    }
+
+    function profileP6TC() {
+      const q = state.params.p6tc;
+      const a = Math.max(.001, q.a);
+      const b = Math.max(a + .001, q.b);
+      return Array.from({ length: 110 }, (_, i) => {
+        const r = a + (b - a) * i / 109;
+        return { x: vTheta(r), y: r };
+      });
+    }
+
+    function profileP7() {
+      const q = state.params.p7;
+      return Array.from({ length: 90 }, (_, i) => {
+        const Re = Math.pow(10, -1 + 4 * i / 89);
+        const low = 24 / Re * (1 + 0.15 * Math.pow(Re, .687));
+        const blend = 1 / (1 + Math.exp(-(Math.log10(Re) - 2.6) * 4));
+        const cd = low * (1 - blend) + q.Cd * blend;
+        return { x: Math.log10(Re), y: Math.log10(cd) };
+      });
+    }
+
+    function profileP8() {
+      const q = state.params.p8;
+      return Array.from({ length: 100 }, (_, i) => {
+        const y = q.ymax * i / 99;
+        return { x: uStokes1(y), y };
+      });
+    }
+
+    function profileP9() {
+      return Array.from({ length: 110 }, (_, i) => {
+        const r = .03 + 3 * i / 109;
+        return { x: vVortex(r), y: r };
+      });
+    }
+
+    function profileP10() {
+      const q = state.params.p10;
+      return Array.from({ length: 110 }, (_, i) => {
+        const y = q.ymax * i / 109;
+        return { x: uOscillating(y, state.time), y };
+      });
+    }
+
+    function profileP11() {
+      const q = state.params.p11;
+      return Array.from({ length: 100 }, (_, i) => {
+        const y = q.h * i / 99;
+        return { x: uFiniteStart(y), y };
+      });
+    }
+
+    function profileP12() {
+      return Array.from({ length: 100 }, (_, i) => {
+        const eta = 8 * i / 99;
+        return { x: blasiusFp(eta), y: eta };
+      });
+    }
+
+    function profileP13() {
+      const q = state.params.p13;
+      const H = Math.max(.6, 4 * Math.sqrt(q.nu / Math.max(.001, q.Omega)));
+      return Array.from({ length: 100 }, (_, i) => {
+        const y = H * i / 99;
+        return { x: diskVtheta(q.R, y), y };
+      });
+    }
+
+    function randomWakeParticle(L, W, H, R, atStart = false) {
+      let p;
+      do {
+        p = {
+          x: atStart ? -L / 2 : rand(-L / 2, L / 2),
+          y: rand(-H / 2, H / 2),
+          z: rand(-W / 2, W / 2)
+        };
+      } while (Math.hypot(p.x, p.y, p.z) < R * 1.08);
+      return p;
+    }
+
+    function sampleMax(fn, a, b) {
+      let m = .0001;
+      for (let i = 0; i < 140; i++) {
+        const x = a + (b - a) * i / 139;
+        m = Math.max(m, Math.abs(fn(x)));
+      }
+      return m;
+    }
+
+    function integrateTrap(fn, a, b, n) {
+      let s = 0;
+      for (let i = 0; i <= n; i++) {
+        const x = a + (b - a) * i / n;
+        s += fn(x) * (i === 0 || i === n ? .5 : 1);
+      }
+      return s * (b - a) / n;
+    }
+
+    function rand(a, b) {
+      return a + Math.random() * (b - a);
+    }
+
+    function wrap(x, a, b) {
+      const L = b - a;
+      while (x < a) x += L;
+      while (x > b) x -= L;
+      return x;
+    }
+
+    function clamp(x, a, b) {
+      return Math.max(a, Math.min(b, x));
+    }
+
+    function fmt(x) {
+      if (!Number.isFinite(x)) return "--";
+      const ax = Math.abs(x);
+      if (ax > 999 || (ax > 0 && ax < .01)) return x.toExponential(2);
+      return x.toFixed(ax >= 10 ? 2 : 3).replace(/\.?0+$/, "");
+    }
+
+    function fmtInput(x) {
+      return Number(x).toFixed(3).replace(/\.?0+$/, "");
+    }
+  </script>
+</body>
+</html>

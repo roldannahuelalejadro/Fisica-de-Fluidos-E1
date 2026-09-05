@@ -1,0 +1,2703 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador Guia 3 - Flujos ideales</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f4;
+      --panel: #ffffff;
+      --panel-soft: #eef2f0;
+      --ink: #202426;
+      --muted: #66716d;
+      --line: #d8dfdc;
+      --axis: #45504c;
+      --teal: #08756f;
+      --teal-soft: #d7ece8;
+      --red: #b64b3d;
+      --red-soft: #f4ded9;
+      --amber: #ad7b12;
+      --amber-soft: #f7ead0;
+      --violet: #6750a4;
+      --violet-soft: #e8e1f7;
+      --blue: #326b9a;
+      --shadow: 0 10px 30px rgba(31, 41, 37, .12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      border-radius: 7px;
+      min-height: 34px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: #aab6b1;
+      background: #fbfcfb;
+    }
+
+    button.primary {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #fff;
+    }
+
+    button.danger {
+      color: var(--red);
+      border-color: #e4b7af;
+      background: #fffafa;
+    }
+
+    button.icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 340px minmax(420px, 1fr) 340px;
+      height: 100vh;
+      min-height: 560px;
+    }
+
+    aside {
+      min-width: 0;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      overflow: auto;
+    }
+
+    aside.right {
+      border-right: 0;
+      border-left: 1px solid var(--line);
+    }
+
+    .sidebar-inner {
+      padding: 16px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 2px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    section {
+      display: grid;
+      gap: 10px;
+    }
+
+    section h2 {
+      margin: 0;
+      color: #303936;
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .preset-list,
+    .object-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .preset-btn,
+    .object-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 8px 9px;
+      min-height: 44px;
+    }
+
+    .preset-btn.active,
+    .object-row.active {
+      border-color: #6fb8ae;
+      background: var(--teal-soft);
+    }
+
+    .preset-title,
+    .object-name {
+      font-size: 13px;
+      font-weight: 680;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .preset-tag,
+    .object-kind {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .add-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .add-grid button {
+      height: 40px;
+      padding: 5px;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+    }
+
+    .main {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      background: #e9eeeb;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.94);
+      border-bottom: 1px solid var(--line);
+      min-height: 58px;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .toolbar label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .toolbar input[type="range"] {
+      width: 110px;
+      accent-color: var(--teal);
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: #3b4541;
+      font-size: 12px;
+      min-height: 34px;
+    }
+
+    .toggle input {
+      accent-color: var(--teal);
+      margin: 0;
+    }
+
+    .canvas-shell {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      background: #fbfcfb;
+      overflow: hidden;
+    }
+
+    canvas#flowCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .hud {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+
+    .chip {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 7px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(216,223,220,.9);
+      box-shadow: var(--shadow);
+      padding: 5px 8px;
+      font-size: 12px;
+      color: #2c3431;
+    }
+
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .statusbar {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 12px;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .fields {
+      display: grid;
+      gap: 9px;
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .field input,
+    .field select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      min-height: 34px;
+      padding: 7px 8px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .field input[type="checkbox"] {
+      width: auto;
+      min-height: 0;
+      accent-color: var(--teal);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .param-control {
+      display: grid;
+      gap: 5px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .param-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .param-head input {
+      width: 84px;
+      min-height: 28px;
+      padding: 4px 6px;
+      text-align: right;
+    }
+
+    .param-control input[type="range"] {
+      width: 100%;
+      accent-color: var(--teal);
+    }
+
+    .expr-input {
+      min-height: 94px;
+      resize: vertical;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      line-height: 1.35;
+    }
+
+    .formula {
+      display: grid;
+      gap: 7px;
+      padding: 10px;
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: #26302d;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .compact-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .mini-plot {
+      width: 100%;
+      height: 142px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .viridis-ramp {
+      height: 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: linear-gradient(90deg, #6c4a7e, #5d7aa5, #58aaa3, #9bd389, #f4e58b);
+    }
+
+    .pill {
+      justify-self: end;
+      min-width: 58px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      text-align: center;
+      color: #25312e;
+      background: #edf1ef;
+    }
+
+    .swatch-source { background: var(--teal); }
+    .swatch-vortex { background: var(--violet); }
+    .swatch-dipole { background: var(--amber); }
+    .swatch-solid { background: #59645f; }
+
+    @media (max-width: 1120px) {
+      .app {
+        grid-template-columns: 300px minmax(380px, 1fr);
+      }
+
+      aside.right {
+        display: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      html,
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        min-height: 100vh;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 72vh auto;
+      }
+
+      aside {
+        max-height: none;
+      }
+
+      aside.right {
+        display: block;
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .toolbar {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="sidebar-inner">
+        <div class="brand">
+          <h1>Simulador Guia 3</h1>
+          <span>Flujo potencial 2D</span>
+        </div>
+
+        <section>
+          <h2>Presets</h2>
+          <div class="preset-list" id="presetList"></div>
+        </section>
+
+        <section>
+          <h2>Agregar</h2>
+          <div class="add-grid">
+            <button title="Fuente" data-add="source">⊕</button>
+            <button title="Sumidero" data-add="sink">⊖</button>
+            <button title="Vortice" data-add="vortex">↺</button>
+            <button title="Dipolo fuente-sumidero" data-add="dipole">⇀</button>
+            <button title="Corriente uniforme" data-add="uniform">→</button>
+            <button title="Cilindro con corriente" data-add="cylinder">◯</button>
+            <button title="Sistema P6: cilindro, circulacion y dipolo" data-add="p6system">P6</button>
+            <button title="Potencial complejo personalizado" data-add="customPotential">W</button>
+            <button title="Pared vertical" data-add="wallV">│</button>
+            <button title="Pared horizontal" data-add="wallH">─</button>
+            <button title="Borrar seleccion" id="deleteBtn">⌫</button>
+          </div>
+        </section>
+
+        <section>
+          <h2>Objetos</h2>
+          <div class="object-list" id="objectList"></div>
+        </section>
+
+        <section>
+          <h2>Escena</h2>
+          <div class="compact-actions">
+            <button id="fitBtn" title="Ajustar vista">□</button>
+            <button id="resetParticlesBtn" title="Reiniciar particulas">↻</button>
+            <button id="exportBtn" title="Copiar JSON">{} </button>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="snapGrid">
+            ajustar a grilla
+          </label>
+          <div class="note">Arrastra objetos en el plano. Rueda del mouse: zoom. Arrastra fondo: pan.</div>
+        </section>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <button class="icon primary" id="playBtn" title="Pausar o reproducir">Ⅱ</button>
+          <button class="icon" id="stepBtn" title="Avanzar un paso">›</button>
+          <label>velocidad <input type="range" id="speedSlider" min="0" max="3" step="0.05" value="1"></label>
+          <label>lineas <input type="range" id="lineSlider" min="8" max="42" step="1" value="24"></label>
+        </div>
+        <div class="toolbar-group">
+          <label class="toggle"><input type="checkbox" id="showStreamlines" checked> lineas</label>
+          <label class="toggle"><input type="checkbox" id="showParticles" checked> particulas</label>
+          <label class="toggle"><input type="checkbox" id="showVectors"> flechas</label>
+          <label class="toggle"><input type="checkbox" id="showPressure" checked> presion</label>
+          <label class="toggle"><input type="checkbox" id="showStagnation" checked> estancamiento</label>
+        </div>
+      </div>
+
+      <div class="canvas-shell" id="canvasShell">
+        <canvas id="flowCanvas"></canvas>
+        <div class="hud">
+          <span class="chip"><span class="legend-dot swatch-source"></span> fuente/sumidero</span>
+          <span class="chip"><span class="legend-dot swatch-vortex"></span> vortice</span>
+          <span class="chip"><span class="legend-dot swatch-dipole"></span> dipolo</span>
+          <span class="chip"><span class="legend-dot swatch-solid"></span> solido</span>
+        </div>
+      </div>
+
+      <div class="statusbar">
+        <span id="coordReadout">z = 0.00 + 0.00 i</span>
+        <span id="timeReadout">t = 0.00</span>
+      </div>
+    </main>
+
+    <aside class="right">
+      <div class="sidebar-inner">
+        <section>
+          <h2>Potencial</h2>
+          <div class="formula" id="formulaBox"></div>
+          <div class="note" id="presetNote"></div>
+        </section>
+
+        <section>
+          <h2>Inspector</h2>
+          <div id="inspector"></div>
+        </section>
+
+        <section>
+          <h2>Presion en el plano</h2>
+          <div class="viridis-ramp"></div>
+          <div class="fields" id="pressureControls"></div>
+          <div class="note">Escala fija: morado = presion baja; amarillo = presion alta. El zoom ya no cambia la comparacion.</div>
+        </section>
+
+        <section>
+          <h2>Estancamiento</h2>
+          <div class="formula" id="stagnationBox"></div>
+        </section>
+
+        <section>
+          <h2>Presion en cilindro</h2>
+          <canvas class="mini-plot" id="pressurePlot"></canvas>
+          <div class="note" id="pressureNote"></div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const TAU = Math.PI * 2;
+    const EPS = 1e-6;
+
+    const canvas = document.getElementById("flowCanvas");
+    const shell = document.getElementById("canvasShell");
+    const ctx = canvas.getContext("2d");
+    const staticCanvas = document.createElement("canvas");
+    const staticCtx = staticCanvas.getContext("2d");
+    const pressureCanvas = document.createElement("canvas");
+    const pressureImageCtx = pressureCanvas.getContext("2d");
+    const pressurePlot = document.getElementById("pressurePlot");
+    const pressureCtx = pressurePlot.getContext("2d");
+
+    const state = {
+      view: { cx: 0, cy: 0, scale: 78, width: 900, height: 700, dpr: 1 },
+      sim: {
+        running: true,
+        time: 0,
+        speed: 1,
+        lineDensity: 24,
+        showStreamlines: true,
+        showParticles: true,
+        showVectors: false,
+        showPressure: true,
+        showStagnation: true,
+        snapGrid: false,
+        rho: 1,
+        pInf: 0,
+        pressureMin: -8,
+        pressureMax: 0.5,
+        pressureUnit: "u.p.",
+        particles: []
+      },
+      objects: [],
+      selectedId: null,
+      activePreset: "",
+      formula: [],
+      note: "",
+      stagnation: [],
+      drag: null,
+      needsStatic: true,
+      lastFrame: performance.now()
+    };
+
+    const kindMeta = {
+      uniform: { name: "corriente", tag: "U infinito", color: "#326b9a" },
+      source: { name: "fuente", tag: "Q > 0", color: "#08756f" },
+      sink: { name: "sumidero", tag: "Q < 0", color: "#b64b3d" },
+      vortex: { name: "vortice", tag: "Gamma", color: "#6750a4" },
+      dipole: { name: "dipolo", tag: "mu", color: "#ad7b12" },
+      cylinder: { name: "cilindro", tag: "radio a", color: "#59645f" },
+      p6system: { name: "sistema P6", tag: "cilindro + dipolo", color: "#59645f" },
+      customPotential: { name: "potencial custom", tag: "W(z) / dWdz", color: "#326b9a" },
+      wallV: { name: "pared vertical", tag: "x = c", color: "#202426" },
+      wallH: { name: "pared horizontal", tag: "y = c", color: "#202426" }
+    };
+
+    function uid(prefix) {
+      return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
+    }
+
+    function round(v, d = 3) {
+      const f = 10 ** d;
+      return Math.round(v * f) / f;
+    }
+
+    function fmt(v) {
+      if (!Number.isFinite(v)) return "-";
+      const a = Math.abs(v);
+      if (a >= 1000 || (a > 0 && a < 0.001)) return v.toExponential(2);
+      return round(v, 3).toString();
+    }
+
+    function deg(rad) {
+      return rad * 180 / Math.PI;
+    }
+
+    function rad(degValue) {
+      return degValue * Math.PI / 180;
+    }
+
+    function selectedObject() {
+      return state.objects.find(o => o.id === state.selectedId) || null;
+    }
+
+    function objectLabel(o) {
+      if (o.label) return o.label;
+      const meta = kindMeta[o.type] || { name: o.type };
+      if (o.type === "source") return `Fuente Q=${fmt(o.strength)}`;
+      if (o.type === "sink") return `Sumidero Q=${fmt(o.strength)}`;
+      if (o.type === "vortex") return `Vortice Γ=${fmt(o.gamma)}`;
+      if (o.type === "dipole") return `Dipolo μ=${fmt(o.mu)}`;
+      if (o.type === "uniform") return `Corriente U=${fmt(o.speed)}`;
+      if (o.type === "cylinder") return `Cilindro a=${fmt(o.radius)}`;
+      if (o.type === "p6system") return `P6 μ=${fmt(o.mu)}, Γ=${fmt(o.gamma)}`;
+      if (o.type === "customPotential") return o.mode === "W" ? "W(z) custom" : "dW/dz custom";
+      if (o.type === "wallV") return `Pared x=${fmt(o.x)}`;
+      if (o.type === "wallH") return `Pared y=${fmt(o.y)}`;
+      return meta.name;
+    }
+
+    function baseObject(type, props = {}) {
+      const defaults = {
+        id: uid(type),
+        type,
+        visible: true,
+        image: false,
+        label: ""
+      };
+      const byType = {
+        uniform: { speed: 1, angle: 0 },
+        source: { x: -1, y: 0, strength: 4 },
+        sink: { x: 1, y: 0, strength: -4 },
+        vortex: { x: 0, y: 0, gamma: 5 },
+        dipole: { x: 0, y: 0, mu: 3, angle: 0 },
+        cylinder: { x: 0, y: 0, radius: 1, speed: 1, angle: 0, gamma: 0 },
+        p6system: { x: 0, y: 0, radius: 1, gamma: 5, mu: 8, distanceRatio: 2, dipoleAngle: Math.PI / 2, positionAngle: 0 },
+        customPotential: {
+          x: 0,
+          y: 0,
+          mode: "dWdz",
+          expression: "U*(1-a^2/z^2)-i*Gamma/(2*pi*z)",
+          xi: 0.025,
+          params: { U: 1, a: 1, Gamma: 2 }
+        },
+        wallV: { x: 0 },
+        wallH: { y: 0 }
+      };
+      return Object.assign({}, defaults, byType[type], props);
+    }
+
+    const presets = [
+      {
+        id: "p1_uniform",
+        title: "P1: corriente uniforme",
+        tag: "W = U e^(-i a) z",
+        note: "Campo constante. Cambia U o el angulo en el inspector para rotar las lineas.",
+        formula: ["W(z) = U∞ e^(-iα) z", "u - i v = U∞ e^(-iα)", "ψ = U∞(y cos α - x sin α)"],
+        objects: () => [baseObject("uniform", { speed: 1.4, angle: rad(18), label: "U∞" })]
+      },
+      {
+        id: "p1_source_sink",
+        title: "P1: fuente y sumidero",
+        tag: "log(z-z0)",
+        note: "La fuente emite y el sumidero absorbe. Acerca los puntos para ver como aparece un dipolo.",
+        formula: ["W(z) = (Q/2π) log(z-z0)", "u - i v = (Q/2π)/(z-z0)", "sumidero: Q < 0"],
+        objects: () => [
+          baseObject("source", { x: -1.2, y: 0, strength: 4, label: "+Q" }),
+          baseObject("sink", { x: 1.2, y: 0, strength: -4, label: "-Q" })
+        ]
+      },
+      {
+        id: "p1_vortex",
+        title: "P1: vortice puntual",
+        tag: "Gamma",
+        note: "Con esta convencion Γ positivo gira antihorario.",
+        formula: ["W(z) = -i Γ/(2π) log(z-z0)", "u = -Γ(y-y0)/(2πr²)", "v = Γ(x-x0)/(2πr²)"],
+        objects: () => [baseObject("vortex", { x: 0, y: 0, gamma: 5, label: "Γ" })]
+      },
+      {
+        id: "p1_dipole_source",
+        title: "P1: dipolo fuente-sumidero",
+        tag: "mu",
+        note: "El dipolo esta implementado como el limite analitico de fuente y sumidero cercanos.",
+        formula: ["W(z) = - μ e^(iα) / [2π(z-z0)]", "u - i v = μ e^(iα) / [2π(z-z0)²]"],
+        objects: () => [baseObject("dipole", { x: 0, y: 0, mu: 5, angle: 0, label: "μQ0" })]
+      },
+      {
+        id: "p1_vortex_pair",
+        title: "P1: dipolo de vortices",
+        tag: "+Γ / -Γ",
+        note: "Par de vortices de igual modulo y signo opuesto.",
+        formula: ["W(z) = -iΓ/(2π) log(z-z1) + iΓ/(2π) log(z-z2)", "El campo lejano decae como un dipolo."],
+        objects: () => [
+          baseObject("vortex", { x: -0.55, y: 0, gamma: 5, label: "+Γ" }),
+          baseObject("vortex", { x: 0.55, y: 0, gamma: -5, label: "-Γ" })
+        ]
+      },
+      {
+        id: "p2_source_wall",
+        title: "P2: fuente cerca de plano",
+        tag: "imagen igual",
+        note: "Para una pared impermeable se refleja la fuente con el mismo signo.",
+        formula: ["Pared: x = 0", "W(z) = (Q/2π)log(z-d) + (Q/2π)log(z+d)", "La pared queda como linea de corriente."],
+        objects: () => [
+          baseObject("wallV", { x: 0, label: "plano solido" }),
+          baseObject("source", { x: 1.2, y: 0, strength: 4, label: "Q" }),
+          baseObject("source", { x: -1.2, y: 0, strength: 4, image: true, label: "imagen Q" })
+        ]
+      },
+      {
+        id: "p2_vortex_wall",
+        title: "P2: vortice cerca de plano",
+        tag: "imagen opuesta",
+        note: "Para un vortice, la imagen contra un plano tiene circulacion opuesta.",
+        formula: ["Pared: x = 0", "W(z) = -iΓ/(2π)log(z-d) + iΓ/(2π)log(z+d)"],
+        objects: () => [
+          baseObject("wallV", { x: 0, label: "plano solido" }),
+          baseObject("vortex", { x: 1.25, y: 0, gamma: 5, label: "+Γ" }),
+          baseObject("vortex", { x: -1.25, y: 0, gamma: -5, image: true, label: "imagen -Γ" })
+        ]
+      },
+      {
+        id: "p3_corner",
+        title: "P3: codo recto con fuente",
+        tag: "4 imagenes",
+        note: "Fuente en (a,a) con b = sqrt(2)a; las paredes son x=0 e y=0.",
+        formula: ["z0 = a + ia", "W(z) = Σ (Q/2π) log(z-zk)", "zk = (±a, ±a)"],
+        objects: () => [
+          baseObject("wallV", { x: 0, label: "pared x=0" }),
+          baseObject("wallH", { y: 0, label: "pared y=0" }),
+          baseObject("source", { x: 1, y: 1, strength: 4, label: "Q" }),
+          baseObject("source", { x: -1, y: 1, strength: 4, image: true, label: "imagen" }),
+          baseObject("source", { x: 1, y: -1, strength: 4, image: true, label: "imagen" }),
+          baseObject("source", { x: -1, y: -1, strength: 4, image: true, label: "imagen" })
+        ]
+      },
+      {
+        id: "p4_cylinder",
+        title: "P4: flujo alrededor de cilindro",
+        tag: "teorema del circulo",
+        note: "Equivale a corriente uniforme mas dipolo centrado. Los puntos de estancamiento aparecen sobre el contorno.",
+        formula: ["W(z) = U∞(z + a²/z)", "u - i v = U∞(1 - a²/z²)", "Cp(θ) = 1 - 4 sin²θ"],
+        objects: () => [baseObject("cylinder", { x: 0, y: 0, radius: 1, speed: 1.25, angle: 0, gamma: 0, label: "cilindro" })]
+      },
+      {
+        id: "p4_cylinder_circ",
+        title: "P4/P6: cilindro con circulacion",
+        tag: "Gamma atrapada",
+        note: "La circulacion desplaza los puntos de estancamiento y produce sustentacion ideal.",
+        formula: ["W(z) = U∞(z+a²/z) - iΓ/(2π)log z", "u - i v = U∞(1-a²/z²) - iΓ/(2πz)"],
+        objects: () => [baseObject("cylinder", { x: 0, y: 0, radius: 1, speed: 1.25, angle: 0, gamma: 5, label: "cilindro + Γ" })]
+      },
+      {
+        id: "p6_dipole_cylinder",
+        title: "P6: cilindro, Γ y dipolo",
+        tag: "presion + fuerza",
+        note: "Preset para interpretar el P6. Para d=2a y dipolo vertical: Fx = rho*mu/(8*pi*a^3)*(16mu/27 - Gamma*a). Equilibrio: mu = 27 Gamma a / 16.",
+        formula: [
+          "z0 = d e^(i beta), M = mu e^(i alpha)/(2pi)",
+          "W'(z) = M/(z-z0)^2 - conj(M)a^2/(conj(z0)z-a^2)^2 - iGamma/(2pi z)",
+          "P = Pinf - rho |u|^2/2"
+        ],
+        objects: () => [baseObject("p6system", { x: 0, y: 0, radius: 1, gamma: 5, mu: 8.44, distanceRatio: 2, dipoleAngle: Math.PI / 2, positionAngle: 0, label: "P6" })]
+      },
+      {
+        id: "p8_binary",
+        title: "P8: estrella binaria",
+        tag: "fuente + sumidero + Γ",
+        note: "Modelo cualitativo: fuente en (d,0), sumidero en el origen y rotacion alrededor del agujero negro.",
+        formula: ["W(z) = (Q/2π)log(z-d) - (Q/2π)log z - iΓ/(2π)log z", "r → ∞: queda un dipolo mas circulacion."],
+        objects: () => [
+          baseObject("sink", { x: 0, y: 0, strength: -5, label: "-Q" }),
+          baseObject("source", { x: 2.2, y: 0, strength: 5, label: "Q" }),
+          baseObject("vortex", { x: 0, y: 0, gamma: 4, label: "Γ" })
+        ]
+      }
+    ];
+
+    function setPreset(id) {
+      const preset = presets.find(p => p.id === id) || presets[0];
+      state.objects = preset.objects();
+      state.activePreset = preset.id;
+      state.formula = preset.formula;
+      state.note = preset.note;
+      state.selectedId = state.objects.find(o => !o.image && !o.type.startsWith("wall"))?.id || state.objects[0]?.id || null;
+      state.sim.time = 0;
+      resetParticles();
+      fitView();
+      autoPressureScale();
+      invalidate();
+    }
+
+    function invalidate(refreshControls = true) {
+      state.needsStatic = true;
+      if (refreshControls) renderControls();
+    }
+
+    function getBounds() {
+      const { width, height, scale, cx, cy } = state.view;
+      return {
+        xmin: cx - width / (2 * scale),
+        xmax: cx + width / (2 * scale),
+        ymin: cy - height / (2 * scale),
+        ymax: cy + height / (2 * scale)
+      };
+    }
+
+    function worldToScreen(x, y) {
+      const v = state.view;
+      return {
+        x: v.width / 2 + (x - v.cx) * v.scale,
+        y: v.height / 2 - (y - v.cy) * v.scale
+      };
+    }
+
+    function screenToWorld(x, y) {
+      const v = state.view;
+      return {
+        x: v.cx + (x - v.width / 2) / v.scale,
+        y: v.cy - (y - v.height / 2) / v.scale
+      };
+    }
+
+    function snap(value) {
+      return state.sim.snapGrid ? Math.round(value * 4) / 4 : value;
+    }
+
+    function cMul(a, b) {
+      return { re: a.re * b.re - a.im * b.im, im: a.re * b.im + a.im * b.re };
+    }
+
+    function cDiv(a, b) {
+      const den = b.re * b.re + b.im * b.im + EPS;
+      return { re: (a.re * b.re + a.im * b.im) / den, im: (a.im * b.re - a.re * b.im) / den };
+    }
+
+    function cSub(a, b) {
+      return { re: a.re - b.re, im: a.im - b.im };
+    }
+
+    function cConj(a) {
+      return { re: a.re, im: -a.im };
+    }
+
+    function cSquare(a) {
+      return { re: a.re * a.re - a.im * a.im, im: 2 * a.re * a.im };
+    }
+
+    function pressureAtSpeed(speed) {
+      if (!Number.isFinite(speed)) return NaN;
+      return state.sim.pInf - 0.5 * state.sim.rho * speed * speed;
+    }
+
+    function pressureAt(x, y) {
+      const v = velocityAt(x, y);
+      return { ...v, pressure: pressureAtSpeed(v.speed) };
+    }
+
+    function p6DipolePoint(o) {
+      const a = Math.max(0.05, o.radius);
+      const d = Math.max(1.02, o.distanceRatio) * a;
+      return {
+        x: o.x + d * Math.cos(o.positionAngle || 0),
+        y: o.y + d * Math.sin(o.positionAngle || 0),
+        d
+      };
+    }
+
+    function p6VelocityContribution(o, x, y) {
+      const a = Math.max(0.05, o.radius);
+      const z = { re: x - o.x, im: y - o.y };
+      const r2 = z.re * z.re + z.im * z.im;
+      if (r2 <= a * a) return { vx: 0, vy: 0, solid: true, speed: Infinity };
+
+      const d = Math.max(1.02, o.distanceRatio) * a;
+      const z0 = { re: d * Math.cos(o.positionAngle || 0), im: d * Math.sin(o.positionAngle || 0) };
+      const dz0 = cSub(z, z0);
+      if (dz0.re * dz0.re + dz0.im * dz0.im < 0.004) return { vx: 0, vy: 0, solid: true, speed: Infinity };
+      const moment = {
+        re: (o.mu / TAU) * Math.cos(o.dipoleAngle),
+        im: (o.mu / TAU) * Math.sin(o.dipoleAngle)
+      };
+      const direct = cDiv(moment, cSquare(dz0));
+      const imageDen = cSquare(cSub(cMul(cConj(z0), z), { re: a * a, im: 0 }));
+      const image = cDiv({ re: -cConj(moment).re * a * a, im: -cConj(moment).im * a * a }, imageDen);
+      const circ = cDiv({ re: 0, im: -o.gamma / TAU }, z);
+      const wprime = { re: direct.re + image.re + circ.re, im: direct.im + image.im + circ.im };
+      return { vx: wprime.re, vy: -wprime.im, speed: Math.hypot(wprime.re, wprime.im), solid: false };
+    }
+
+    function cAdd(a, b) {
+      return { re: a.re + b.re, im: a.im + b.im };
+    }
+
+    function cNeg(a) {
+      return { re: -a.re, im: -a.im };
+    }
+
+    function cScale(a, s) {
+      return { re: a.re * s, im: a.im * s };
+    }
+
+    function cDivXi(a, b, xi) {
+      const den = b.re * b.re + b.im * b.im + xi * xi;
+      return { re: (a.re * b.re + a.im * b.im) / den, im: (a.im * b.re - a.re * b.im) / den };
+    }
+
+    function cExp(a) {
+      const e = Math.exp(Math.max(-60, Math.min(60, a.re)));
+      return { re: e * Math.cos(a.im), im: e * Math.sin(a.im) };
+    }
+
+    function cLogXi(a, xi) {
+      return { re: 0.5 * Math.log(a.re * a.re + a.im * a.im + xi * xi), im: Math.atan2(a.im, a.re) };
+    }
+
+    function cPowXi(a, b, xi) {
+      return cExp(cMul(b, cLogXi(a, xi)));
+    }
+
+    function cSin(a) {
+      return { re: Math.sin(a.re) * Math.cosh(a.im), im: Math.cos(a.re) * Math.sinh(a.im) };
+    }
+
+    function cCos(a) {
+      return { re: Math.cos(a.re) * Math.cosh(a.im), im: -Math.sin(a.re) * Math.sinh(a.im) };
+    }
+
+    function normalizeCustomExpression(expression) {
+      let text = String(expression || "0")
+        .replaceAll("Γ", "Gamma")
+        .replaceAll("γ", "Gamma")
+        .replaceAll("μ", "mu")
+        .replaceAll("π", "pi")
+        .replaceAll("ξ", "xi")
+        .replaceAll("∞", "inf");
+      const eq = text.indexOf("=");
+      if (eq >= 0) text = text.slice(eq + 1);
+      return text;
+    }
+
+    function tokenizeExpression(expression) {
+      const text = normalizeCustomExpression(expression);
+      const tokens = [];
+      let i = 0;
+      while (i < text.length) {
+        const ch = text[i];
+        if (/\s/.test(ch)) {
+          i++;
+        } else if (/[0-9.]/.test(ch)) {
+          const start = i;
+          if (ch === "." && !/[0-9]/.test(text[i + 1] || "")) throw new Error("Numero invalido");
+          i++;
+          while (/[0-9.]/.test(text[i] || "")) i++;
+          if (/[eE]/.test(text[i] || "")) {
+            i++;
+            if (/[+-]/.test(text[i] || "")) i++;
+            while (/[0-9]/.test(text[i] || "")) i++;
+          }
+          const value = Number(text.slice(start, i));
+          if (!Number.isFinite(value)) throw new Error("Numero invalido");
+          tokens.push({ type: "number", value });
+        } else if (/[A-Za-z_]/.test(ch)) {
+          const start = i;
+          i++;
+          while (/[A-Za-z0-9_]/.test(text[i] || "")) i++;
+          tokens.push({ type: "id", value: text.slice(start, i) });
+        } else if ("+-*/^(),".includes(ch)) {
+          tokens.push({ type: ch, value: ch });
+          i++;
+        } else {
+          throw new Error(`Caracter no reconocido: ${ch}`);
+        }
+      }
+      return tokens;
+    }
+
+    function parseCustomExpression(expression) {
+      const tokens = tokenizeExpression(expression);
+      let pos = 0;
+      const peek = () => tokens[pos];
+      const take = type => {
+        const token = tokens[pos];
+        if (!token || token.type !== type) throw new Error(`Falta ${type}`);
+        pos++;
+        return token;
+      };
+
+      function parseExpression() {
+        let node = parseTerm();
+        while (peek()?.type === "+" || peek()?.type === "-") {
+          const op = tokens[pos++].type;
+          node = { type: "binary", op, left: node, right: parseTerm() };
+        }
+        return node;
+      }
+
+      function parseTerm() {
+        let node = parsePower();
+        while (peek()?.type === "*" || peek()?.type === "/") {
+          const op = tokens[pos++].type;
+          node = { type: "binary", op, left: node, right: parsePower() };
+        }
+        return node;
+      }
+
+      function parsePower() {
+        let node = parseUnary();
+        if (peek()?.type === "^") {
+          tokens[pos++];
+          node = { type: "binary", op: "^", left: node, right: parsePower() };
+        }
+        return node;
+      }
+
+      function parseUnary() {
+        if (peek()?.type === "+") {
+          tokens[pos++];
+          return parseUnary();
+        }
+        if (peek()?.type === "-") {
+          tokens[pos++];
+          return { type: "unary", op: "-", arg: parseUnary() };
+        }
+        return parsePrimary();
+      }
+
+      function parsePrimary() {
+        const token = peek();
+        if (!token) throw new Error("Expresion incompleta");
+        if (token.type === "number") {
+          tokens[pos++];
+          return { type: "number", value: token.value };
+        }
+        if (token.type === "id") {
+          tokens[pos++];
+          if (peek()?.type === "(") {
+            tokens[pos++];
+            const args = [];
+            if (peek()?.type !== ")") {
+              do {
+                args.push(parseExpression());
+                if (peek()?.type !== ",") break;
+                tokens[pos++];
+              } while (true);
+            }
+            take(")");
+            return { type: "func", name: token.value, args };
+          }
+          return { type: "var", name: token.value };
+        }
+        if (token.type === "(") {
+          tokens[pos++];
+          const node = parseExpression();
+          take(")");
+          return node;
+        }
+        throw new Error(`Token inesperado: ${token.value}`);
+      }
+
+      const ast = parseExpression();
+      if (pos !== tokens.length) throw new Error(`Token inesperado: ${tokens[pos].value}`);
+      return ast;
+    }
+
+    const customReservedNames = new Set([
+      "z", "Z", "zc", "zlocal", "i", "pi", "e", "xi", "x", "y", "inf",
+      "log", "ln", "exp", "sqrt", "sin", "cos", "tan", "conj", "abs", "arg",
+      "re", "real", "im", "imag", "pow", "cis", "min", "max"
+    ]);
+
+    function customParameterDefault(name) {
+      const lower = name.toLowerCase();
+      if (lower === "a" || lower === "r" || lower === "d") return 1;
+      if (lower === "u") return 1;
+      if (lower === "gamma" || lower === "q" || lower === "mu") return 2;
+      return 0;
+    }
+
+    function syncCustomParameters(o) {
+      const params = o.params || {};
+      const names = [];
+      const seen = new Set();
+      const normalized = normalizeCustomExpression(o.expression);
+      for (const match of normalized.matchAll(/\b[A-Za-z_][A-Za-z0-9_]*\b/g)) {
+        const name = match[0];
+        if (customReservedNames.has(name) || customReservedNames.has(name.toLowerCase()) || seen.has(name)) continue;
+        seen.add(name);
+        names.push(name);
+        if (!Object.prototype.hasOwnProperty.call(params, name)) params[name] = customParameterDefault(name);
+      }
+      o.params = params;
+      o._paramNames = names;
+    }
+
+    function compileCustomPotential(o) {
+      syncCustomParameters(o);
+      const expression = o.expression || "0";
+      if (o._compiledExpression !== expression) {
+        try {
+          o._ast = parseCustomExpression(expression);
+          o._compiledExpression = expression;
+          o._error = "";
+        } catch (err) {
+          o._ast = null;
+          o._error = err.message || "No se pudo parsear";
+        }
+      }
+      return o._ast;
+    }
+
+    function evalCustomAst(node, ctx) {
+      const xi = ctx.xi;
+      if (node.type === "number") return { re: node.value, im: 0 };
+      if (node.type === "var") {
+        const name = node.name;
+        if (name === "z" || name === "Z") return ctx.z;
+        if (name === "zc" || name === "zlocal") return cSub(ctx.z, { re: ctx.origin.x, im: ctx.origin.y });
+        if (name === "i") return { re: 0, im: 1 };
+        if (name === "pi") return { re: Math.PI, im: 0 };
+        if (name === "e") return { re: Math.E, im: 0 };
+        if (name === "xi") return { re: xi, im: 0 };
+        if (name === "x") return { re: ctx.z.re, im: 0 };
+        if (name === "y") return { re: ctx.z.im, im: 0 };
+        if (name === "inf") return { re: 1e9, im: 0 };
+        if (Object.prototype.hasOwnProperty.call(ctx.params, name)) return { re: Number(ctx.params[name]) || 0, im: 0 };
+        throw new Error(`Parametro desconocido: ${name}`);
+      }
+      if (node.type === "unary") return cNeg(evalCustomAst(node.arg, ctx));
+      if (node.type === "binary") {
+        const a = evalCustomAst(node.left, ctx);
+        const b = evalCustomAst(node.right, ctx);
+        if (node.op === "+") return cAdd(a, b);
+        if (node.op === "-") return cSub(a, b);
+        if (node.op === "*") return cMul(a, b);
+        if (node.op === "/") return cDivXi(a, b, xi);
+        if (node.op === "^") return cPowXi(a, b, xi);
+      }
+      if (node.type === "func") {
+        const name = node.name.toLowerCase();
+        const args = node.args.map(arg => evalCustomAst(arg, ctx));
+        const a = args[0] || { re: 0, im: 0 };
+        const b = args[1] || { re: 0, im: 0 };
+        if (name === "log" || name === "ln") return cLogXi(a, xi);
+        if (name === "exp") return cExp(a);
+        if (name === "sqrt") return cPowXi(a, { re: 0.5, im: 0 }, xi);
+        if (name === "sin") return cSin(a);
+        if (name === "cos") return cCos(a);
+        if (name === "tan") return cDivXi(cSin(a), cCos(a), xi);
+        if (name === "conj") return cConj(a);
+        if (name === "abs") return { re: Math.hypot(a.re, a.im), im: 0 };
+        if (name === "arg") return { re: Math.atan2(a.im, a.re), im: 0 };
+        if (name === "re" || name === "real") return { re: a.re, im: 0 };
+        if (name === "im" || name === "imag") return { re: a.im, im: 0 };
+        if (name === "pow") return cPowXi(a, b, xi);
+        if (name === "cis") return { re: Math.cos(a.re), im: Math.sin(a.re) };
+        if (name === "min") return { re: Math.min(a.re, b.re), im: 0 };
+        if (name === "max") return { re: Math.max(a.re, b.re), im: 0 };
+        throw new Error(`Funcion desconocida: ${node.name}`);
+      }
+      throw new Error("Nodo invalido");
+    }
+
+    function customPotentialVelocity(o, x, y) {
+      const ast = compileCustomPotential(o);
+      if (!ast) return { vx: 0, vy: 0, speed: 0, solid: false };
+      const xi = Math.max(1e-5, Math.abs(o.xi || 0.025));
+      const baseCtx = { z: { re: x, im: y }, xi, params: o.params || {}, origin: { x: o.x || 0, y: o.y || 0 } };
+      try {
+        let wprime;
+        if (o.mode === "W") {
+          const h = Math.max(1e-4, Math.min(0.02, xi * 0.5));
+          const plus = { ...baseCtx, z: { re: x + h, im: y } };
+          const minus = { ...baseCtx, z: { re: x - h, im: y } };
+          wprime = cScale(cSub(evalCustomAst(ast, plus), evalCustomAst(ast, minus)), 1 / (2 * h));
+        } else {
+          wprime = evalCustomAst(ast, baseCtx);
+        }
+        const speed = Math.hypot(wprime.re, wprime.im);
+        if (!Number.isFinite(speed) || speed > 1e7) return { vx: 0, vy: 0, speed: Infinity, solid: true };
+        o._error = "";
+        return { vx: wprime.re, vy: -wprime.im, speed, solid: false };
+      } catch (err) {
+        o._error = err.message || "Error al evaluar";
+        return { vx: 0, vy: 0, speed: 0, solid: false };
+      }
+    }
+
+    function velocityAt(x, y) {
+      let vx = 0;
+      let vy = 0;
+      let solid = false;
+      for (const o of state.objects) {
+        if (!o.visible) continue;
+        if (o.type === "uniform") {
+          vx += o.speed * Math.cos(o.angle);
+          vy += o.speed * Math.sin(o.angle);
+        } else if (o.type === "source" || o.type === "sink") {
+          const q = o.strength;
+          const dx = x - o.x;
+          const dy = y - o.y;
+          const r2 = dx * dx + dy * dy;
+          if (r2 < 0.003) return { vx: 0, vy: 0, speed: Infinity, solid: true };
+          const c = q / (TAU * Math.max(r2, 0.006));
+          vx += c * dx;
+          vy += c * dy;
+        } else if (o.type === "vortex") {
+          const dx = x - o.x;
+          const dy = y - o.y;
+          const r2 = dx * dx + dy * dy;
+          if (r2 < 0.003) return { vx: 0, vy: 0, speed: Infinity, solid: true };
+          const c = o.gamma / (TAU * Math.max(r2, 0.006));
+          vx += -c * dy;
+          vy += c * dx;
+        } else if (o.type === "dipole") {
+          const dx = x - o.x;
+          const dy = y - o.y;
+          const r2 = dx * dx + dy * dy;
+          if (r2 < 0.006) return { vx: 0, vy: 0, speed: Infinity, solid: true };
+          const z2 = { re: dx * dx - dy * dy, im: 2 * dx * dy };
+          const c = { re: (o.mu / TAU) * Math.cos(o.angle), im: (o.mu / TAU) * Math.sin(o.angle) };
+          const wprime = cDiv(c, z2);
+          vx += wprime.re;
+          vy += -wprime.im;
+        } else if (o.type === "cylinder") {
+          const dx = x - o.x;
+          const dy = y - o.y;
+          const r2 = dx * dx + dy * dy;
+          const a = Math.max(0.05, o.radius);
+          if (r2 <= a * a) {
+            solid = true;
+          } else {
+            const z2 = { re: dx * dx - dy * dy, im: 2 * dx * dy };
+            const a2OverZ2 = cDiv({ re: a * a, im: 0 }, z2);
+            const term = { re: 1 - a2OverZ2.re, im: -a2OverZ2.im };
+            const U = { re: o.speed * Math.cos(o.angle), im: -o.speed * Math.sin(o.angle) };
+            let wprime = cMul(U, term);
+            if (Math.abs(o.gamma) > EPS) {
+              const vortexTerm = cDiv({ re: 0, im: -o.gamma / TAU }, { re: dx, im: dy });
+              wprime = { re: wprime.re + vortexTerm.re, im: wprime.im + vortexTerm.im };
+            }
+            vx += wprime.re;
+            vy += -wprime.im;
+          }
+        } else if (o.type === "p6system") {
+          const v = p6VelocityContribution(o, x, y);
+          if (v.solid) {
+            solid = true;
+          } else {
+            vx += v.vx;
+            vy += v.vy;
+          }
+        } else if (o.type === "customPotential") {
+          const v = customPotentialVelocity(o, x, y);
+          if (v.solid) {
+            solid = true;
+          } else {
+            vx += v.vx;
+            vy += v.vy;
+          }
+        }
+      }
+      const speed = Math.hypot(vx, vy);
+      return { vx, vy, speed, solid };
+    }
+
+    function resize() {
+      const rect = shell.getBoundingClientRect();
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      state.view.width = Math.max(320, rect.width);
+      state.view.height = Math.max(320, rect.height);
+      state.view.dpr = dpr;
+      for (const target of [canvas, staticCanvas]) {
+        target.width = Math.round(state.view.width * dpr);
+        target.height = Math.round(state.view.height * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      staticCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      resizePressurePlot();
+      invalidate();
+    }
+
+    function resizePressurePlot() {
+      const rect = pressurePlot.getBoundingClientRect();
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      pressurePlot.width = Math.max(220, Math.round(rect.width * dpr));
+      pressurePlot.height = Math.max(110, Math.round(rect.height * dpr));
+      pressureCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function fitView() {
+      const points = [];
+      for (const o of state.objects) {
+        if (o.type === "uniform") continue;
+        if (o.type === "wallV") {
+          points.push({ x: o.x, y: -2.5 }, { x: o.x, y: 2.5 });
+        } else if (o.type === "wallH") {
+          points.push({ x: -2.5, y: o.y }, { x: 2.5, y: o.y });
+        } else if (o.type === "cylinder") {
+          points.push(
+            { x: o.x - o.radius * 1.8, y: o.y - o.radius * 1.8 },
+            { x: o.x + o.radius * 1.8, y: o.y + o.radius * 1.8 }
+          );
+        } else if (o.type === "p6system") {
+          const dip = p6DipolePoint(o);
+          points.push(
+            { x: o.x - o.radius * 1.8, y: o.y - o.radius * 1.8 },
+            { x: o.x + o.radius * 1.8, y: o.y + o.radius * 1.8 },
+            { x: dip.x, y: dip.y }
+          );
+        } else {
+          points.push({ x: o.x, y: o.y });
+        }
+      }
+      if (!points.length) {
+        state.view.cx = 0;
+        state.view.cy = 0;
+        state.view.scale = 86;
+        return;
+      }
+      const xs = points.map(p => p.x);
+      const ys = points.map(p => p.y);
+      const xmin = Math.min(...xs) - 1.8;
+      const xmax = Math.max(...xs) + 1.8;
+      const ymin = Math.min(...ys) - 1.5;
+      const ymax = Math.max(...ys) + 1.5;
+      state.view.cx = (xmin + xmax) / 2;
+      state.view.cy = (ymin + ymax) / 2;
+      const sx = state.view.width / Math.max(1, xmax - xmin);
+      const sy = state.view.height / Math.max(1, ymax - ymin);
+      state.view.scale = Math.max(36, Math.min(120, Math.min(sx, sy)));
+    }
+
+    function resetParticles() {
+      state.sim.particles = [];
+      const count = Math.round(520 + state.sim.lineDensity * 15);
+      for (let i = 0; i < count; i++) state.sim.particles.push(makeParticle(true));
+    }
+
+    function makeParticle(randomAge = false) {
+      const b = getBounds();
+      for (let tries = 0; tries < 50; tries++) {
+        const x = b.xmin + Math.random() * (b.xmax - b.xmin);
+        const y = b.ymin + Math.random() * (b.ymax - b.ymin);
+        const v = velocityAt(x, y);
+        if (!v.solid && Number.isFinite(v.speed) && v.speed < 80) {
+          return { x, y, age: randomAge ? Math.random() * 280 : 280, hue: Math.random() };
+        }
+      }
+      return { x: 0, y: 0, age: 0, hue: Math.random() };
+    }
+
+    function drawGrid(g) {
+      const { width, height, scale } = state.view;
+      const b = getBounds();
+      g.fillStyle = "#fbfcfb";
+      g.fillRect(0, 0, width, height);
+
+      const targetPx = 70;
+      const rawStep = targetPx / scale;
+      const pow = 10 ** Math.floor(Math.log10(rawStep));
+      const mant = rawStep / pow;
+      const step = (mant < 1.5 ? 1 : mant < 3.5 ? 2 : mant < 7.5 ? 5 : 10) * pow;
+
+      g.lineWidth = 1;
+      g.strokeStyle = "#edf1ef";
+      g.beginPath();
+      const x0 = Math.floor(b.xmin / step) * step;
+      for (let x = x0; x <= b.xmax + step; x += step) {
+        const p = worldToScreen(x, 0);
+        g.moveTo(p.x, 0);
+        g.lineTo(p.x, height);
+      }
+      const y0 = Math.floor(b.ymin / step) * step;
+      for (let y = y0; y <= b.ymax + step; y += step) {
+        const p = worldToScreen(0, y);
+        g.moveTo(0, p.y);
+        g.lineTo(width, p.y);
+      }
+      g.stroke();
+
+      g.strokeStyle = "#b9c4bf";
+      g.lineWidth = 1.4;
+      g.beginPath();
+      const ax = worldToScreen(0, 0).x;
+      const ay = worldToScreen(0, 0).y;
+      g.moveTo(ax, 0);
+      g.lineTo(ax, height);
+      g.moveTo(0, ay);
+      g.lineTo(width, ay);
+      g.stroke();
+
+      g.fillStyle = "#6b7772";
+      g.font = "11px Inter, sans-serif";
+      g.fillText("Re(z)", width - 48, ay - 8);
+      g.fillText("Im(z)", ax + 8, 18);
+    }
+
+    const viridisStops = [
+      [0.00, 108, 74, 126],
+      [0.18, 93, 122, 165],
+      [0.36, 83, 154, 161],
+      [0.56, 82, 181, 153],
+      [0.78, 155, 211, 137],
+      [1.00, 244, 229, 139]
+    ];
+
+    function viridis(t) {
+      const x = Math.max(0, Math.min(1, t));
+      for (let i = 1; i < viridisStops.length; i++) {
+        const a = viridisStops[i - 1];
+        const b = viridisStops[i];
+        if (x <= b[0]) {
+          const f = (x - a[0]) / (b[0] - a[0]);
+          return [
+            Math.round(a[1] + (b[1] - a[1]) * f),
+            Math.round(a[2] + (b[2] - a[2]) * f),
+            Math.round(a[3] + (b[3] - a[3]) * f)
+          ];
+        }
+      }
+      return [244, 229, 139];
+    }
+
+    function pressureScale() {
+      let min = Number(state.sim.pressureMin);
+      let max = Number(state.sim.pressureMax);
+      if (!Number.isFinite(min)) min = -8;
+      if (!Number.isFinite(max)) max = 0.5;
+      if (Math.abs(max - min) < 1e-9) max = min + 1;
+      if (max < min) [min, max] = [max, min];
+      return { min, max };
+    }
+
+    function pressureReferenceBounds() {
+      const points = [];
+      for (const o of state.objects) {
+        if (!o.visible) continue;
+        if (typeof o.x === "number" && typeof o.y === "number") {
+          const r = Math.max(0.7, o.radius || 0.7);
+          points.push({ x: o.x - r, y: o.y - r }, { x: o.x + r, y: o.y + r });
+        }
+        if (o.type === "p6system") {
+          const dip = p6DipolePoint(o);
+          points.push({ x: dip.x, y: dip.y });
+        }
+      }
+      if (!points.length) return { xmin: -4, xmax: 4, ymin: -3, ymax: 3 };
+      const xs = points.map(p => p.x);
+      const ys = points.map(p => p.y);
+      const xmin = Math.min(...xs);
+      const xmax = Math.max(...xs);
+      const ymin = Math.min(...ys);
+      const ymax = Math.max(...ys);
+      const span = Math.max(xmax - xmin, ymax - ymin, 3);
+      const mx = Math.max(1.2, span * 0.45);
+      const my = Math.max(1.2, span * 0.35);
+      return { xmin: xmin - mx, xmax: xmax + mx, ymin: ymin - my, ymax: ymax + my };
+    }
+
+    function autoPressureScale() {
+      const b = pressureReferenceBounds();
+      const values = [];
+      const nx = 84;
+      const ny = 62;
+      for (let j = 0; j < ny; j++) {
+        for (let i = 0; i < nx; i++) {
+          const x = b.xmin + (i + 0.5) / nx * (b.xmax - b.xmin);
+          const y = b.ymin + (j + 0.5) / ny * (b.ymax - b.ymin);
+          const sample = pressureAt(x, y);
+          if (!sample.solid && Number.isFinite(sample.pressure)) values.push(sample.pressure);
+        }
+      }
+      if (values.length < 10) return;
+      values.sort((a, b2) => a - b2);
+      const lo = values[Math.floor(values.length * 0.05)];
+      const hi = values[Math.floor(values.length * 0.97)];
+      const pad = Math.max(0.05, (hi - lo) * 0.08);
+      state.sim.pressureMin = round(lo - pad, 3);
+      state.sim.pressureMax = round(hi + pad, 3);
+    }
+
+    function drawAxes(g) {
+      const { width, height } = state.view;
+      const ax = worldToScreen(0, 0).x;
+      const ay = worldToScreen(0, 0).y;
+      g.strokeStyle = "rgba(69,80,76,.72)";
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(ax, 0);
+      g.lineTo(ax, height);
+      g.moveTo(0, ay);
+      g.lineTo(width, ay);
+      g.stroke();
+      g.fillStyle = "rgba(34,42,39,.85)";
+      g.font = "11px Inter, sans-serif";
+      g.fillText("Re(z)", width - 48, ay - 8);
+      g.fillText("Im(z)", ax + 8, 18);
+    }
+
+    function drawPressureField(g) {
+      if (!state.sim.showPressure) return;
+      const pw = Math.max(90, Math.min(230, Math.round(state.view.width / 4)));
+      const ph = Math.max(70, Math.min(180, Math.round(state.view.height / 4)));
+      pressureCanvas.width = pw;
+      pressureCanvas.height = ph;
+      const image = pressureImageCtx.createImageData(pw, ph);
+      const b = getBounds();
+      const scale = pressureScale();
+
+      for (let j = 0; j < ph; j++) {
+        for (let i = 0; i < pw; i++) {
+          const x = b.xmin + (i + 0.5) / pw * (b.xmax - b.xmin);
+          const y = b.ymax - (j + 0.5) / ph * (b.ymax - b.ymin);
+          const sample = pressureAt(x, y);
+          const p = sample.solid ? NaN : sample.pressure;
+          const k = (j * pw + i) * 4;
+          if (!Number.isFinite(p)) {
+            image.data[k] = 209;
+            image.data[k + 1] = 213;
+            image.data[k + 2] = 210;
+            image.data[k + 3] = 210;
+            continue;
+          }
+          const t = (p - scale.min) / (scale.max - scale.min);
+          const [r, gg, bb] = viridis(t);
+          image.data[k] = r;
+          image.data[k + 1] = gg;
+          image.data[k + 2] = bb;
+          image.data[k + 3] = 204;
+        }
+      }
+
+      pressureImageCtx.putImageData(image, 0, 0);
+      g.save();
+      g.imageSmoothingEnabled = true;
+      g.drawImage(pressureCanvas, 0, 0, state.view.width, state.view.height);
+      g.restore();
+      drawAxes(g);
+    }
+
+    function drawPressureColorbar(g) {
+      if (!state.sim.showPressure) return;
+      const { min, max } = pressureScale();
+      const unit = state.sim.pressureUnit || "u.p.";
+      const boxW = 86;
+      const boxH = 226;
+      const x = state.view.width - boxW - 12;
+      const y = 14;
+      const barX = x + 14;
+      const barY = y + 34;
+      const barW = 18;
+      const barH = 154;
+
+      g.save();
+      g.fillStyle = "rgba(255,255,255,.88)";
+      g.strokeStyle = "rgba(216,223,220,.95)";
+      g.lineWidth = 1;
+      g.beginPath();
+      g.roundRect?.(x, y, boxW, boxH, 7);
+      if (g.roundRect) {
+        g.fill();
+        g.stroke();
+      } else {
+        g.fillRect(x, y, boxW, boxH);
+        g.strokeRect(x, y, boxW, boxH);
+      }
+
+      for (let j = 0; j < barH; j++) {
+        const t = 1 - j / Math.max(1, barH - 1);
+        const [r, gg, bb] = viridis(t);
+        g.fillStyle = `rgb(${r},${gg},${bb})`;
+        g.fillRect(barX, barY + j, barW, 1);
+      }
+      g.strokeStyle = "#6d7773";
+      g.strokeRect(barX, barY, barW, barH);
+
+      const ticks = [
+        { t: 1, value: max },
+        { t: 0.5, value: 0.5 * (min + max) },
+        { t: 0, value: min }
+      ];
+      g.fillStyle = "#25312e";
+      g.font = "11px Inter, sans-serif";
+      g.fillText(`P [${unit}]`, x + 12, y + 20);
+      for (const tick of ticks) {
+        const ty = barY + (1 - tick.t) * barH;
+        g.strokeStyle = "#45504c";
+        g.beginPath();
+        g.moveTo(barX + barW, ty);
+        g.lineTo(barX + barW + 5, ty);
+        g.stroke();
+        g.fillText(fmt(tick.value), barX + barW + 9, ty + 4);
+      }
+      g.restore();
+    }
+
+    function cylinderForce(o) {
+      const a = Math.max(0.05, o.radius);
+      const n = 256;
+      let fx = 0;
+      let fy = 0;
+      for (let i = 0; i < n; i++) {
+        const th = (i + 0.5) / n * TAU;
+        const nx = Math.cos(th);
+        const ny = Math.sin(th);
+        const sample = pressureAt(o.x + nx * a * 1.006, o.y + ny * a * 1.006);
+        if (!Number.isFinite(sample.pressure)) continue;
+        const ds = a * TAU / n;
+        fx += -sample.pressure * nx * ds;
+        fy += -sample.pressure * ny * ds;
+      }
+      return { fx, fy, mag: Math.hypot(fx, fy) };
+    }
+
+    function p6FormulaForce(o) {
+      const a = Math.max(0.05, o.radius);
+      const fx = state.sim.rho * o.mu / (8 * Math.PI * a ** 3) * (o.mu * 16 / 27 - o.gamma * a);
+      return { fx, fy: 0, mag: Math.abs(fx), muEq: 27 * o.gamma * a / 16 };
+    }
+
+    function drawForceVector(g, o) {
+      if (o.type !== "cylinder" && o.type !== "p6system") return;
+      const isCanonicalP6 = o.type === "p6system"
+        && Math.abs((o.distanceRatio || 2) - 2) < 0.01
+        && Math.abs(Math.sin((o.dipoleAngle || 0) - Math.PI / 2)) < 0.01
+        && Math.abs(Math.sin(o.positionAngle || 0)) < 0.01;
+      const f = isCanonicalP6
+        ? p6FormulaForce(o)
+        : cylinderForce(o);
+      if (!Number.isFinite(f.mag) || f.mag < 1e-8) return;
+      const p = worldToScreen(o.x, o.y);
+      const len = Math.max(28, Math.min(95, 26 + Math.log1p(f.mag) * 22));
+      const ux = f.fx / f.mag;
+      const uy = -f.fy / f.mag;
+      const x2 = p.x + ux * len;
+      const y2 = p.y + uy * len;
+      g.strokeStyle = "#1f9d55";
+      g.fillStyle = "#1f9d55";
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(p.x, p.y);
+      g.lineTo(x2, y2);
+      g.stroke();
+      g.beginPath();
+      g.moveTo(x2, y2);
+      g.lineTo(x2 - ux * 10 - uy * 5, y2 - uy * 10 + ux * 5);
+      g.lineTo(x2 - ux * 10 + uy * 5, y2 - uy * 10 - ux * 5);
+      g.closePath();
+      g.fill();
+      g.font = "12px Inter, sans-serif";
+      g.fillText(`F = (${fmt(f.fx)}, ${fmt(f.fy)})`, x2 + 8, y2 - 8);
+    }
+
+    function drawWallsAndSolids(g) {
+      const b = getBounds();
+      for (const o of state.objects) {
+        if (!o.visible) continue;
+        if (o.type === "wallV") {
+          const p1 = worldToScreen(o.x, b.ymin - 10);
+          const p2 = worldToScreen(o.x, b.ymax + 10);
+          g.strokeStyle = "#202426";
+          g.lineWidth = 4;
+          g.beginPath();
+          g.moveTo(p1.x, p1.y);
+          g.lineTo(p2.x, p2.y);
+          g.stroke();
+        } else if (o.type === "wallH") {
+          const p1 = worldToScreen(b.xmin - 10, o.y);
+          const p2 = worldToScreen(b.xmax + 10, o.y);
+          g.strokeStyle = "#202426";
+          g.lineWidth = 4;
+          g.beginPath();
+          g.moveTo(p1.x, p1.y);
+          g.lineTo(p2.x, p2.y);
+          g.stroke();
+        } else if (o.type === "cylinder") {
+          const p = worldToScreen(o.x, o.y);
+          const r = o.radius * state.view.scale;
+          g.fillStyle = "#d1d5d2";
+          g.strokeStyle = "#59645f";
+          g.lineWidth = 2;
+          g.beginPath();
+          g.arc(p.x, p.y, r, 0, TAU);
+          g.fill();
+          g.stroke();
+          if (Math.abs(o.gamma) > EPS) {
+            g.strokeStyle = "#6750a4";
+            g.lineWidth = 2;
+            g.beginPath();
+            g.arc(p.x, p.y, r + 8, -0.8, 1.1);
+            g.stroke();
+          }
+        } else if (o.type === "p6system") {
+          const p = worldToScreen(o.x, o.y);
+          const r = o.radius * state.view.scale;
+          g.fillStyle = "#d1d5d2";
+          g.strokeStyle = "#59645f";
+          g.lineWidth = 2;
+          g.beginPath();
+          g.arc(p.x, p.y, r, 0, TAU);
+          g.fill();
+          g.stroke();
+
+          const dip = p6DipolePoint(o);
+          const dp = worldToScreen(dip.x, dip.y);
+          g.strokeStyle = "#ad7b12";
+          g.fillStyle = "#ad7b12";
+          g.lineWidth = 2;
+          const angle = -o.dipoleAngle;
+          const len = 28;
+          const ux = Math.cos(angle);
+          const uy = Math.sin(angle);
+          g.beginPath();
+          g.moveTo(dp.x - ux * len * 0.5, dp.y - uy * len * 0.5);
+          g.lineTo(dp.x + ux * len * 0.5, dp.y + uy * len * 0.5);
+          g.stroke();
+          g.beginPath();
+          g.moveTo(dp.x + ux * len * 0.5, dp.y + uy * len * 0.5);
+          g.lineTo(dp.x + ux * len * 0.5 - ux * 8 - uy * 5, dp.y + uy * len * 0.5 - uy * 8 + ux * 5);
+          g.lineTo(dp.x + ux * len * 0.5 - ux * 8 + uy * 5, dp.y + uy * len * 0.5 - uy * 8 - ux * 5);
+          g.closePath();
+          g.fill();
+          g.fillStyle = "#24302d";
+          g.font = "12px Inter, sans-serif";
+          g.fillText("mu", dp.x + 12, dp.y - 12);
+          if (Math.abs(o.gamma) > EPS) {
+            g.strokeStyle = "#6750a4";
+            g.lineWidth = 2;
+            g.beginPath();
+            g.arc(p.x, p.y, r + 8, -0.8, 1.1);
+            g.stroke();
+          }
+          drawForceVector(g, o);
+        }
+      }
+    }
+
+    function drawVectors(g) {
+      const b = getBounds();
+      const cols = Math.max(8, Math.floor(state.view.width / 70));
+      const rows = Math.max(6, Math.floor(state.view.height / 70));
+      g.strokeStyle = "rgba(50,107,154,.55)";
+      g.fillStyle = "rgba(50,107,154,.65)";
+      g.lineWidth = 1.3;
+      for (let i = 0; i <= cols; i++) {
+        for (let j = 0; j <= rows; j++) {
+          const x = b.xmin + (i + .5) / (cols + 1) * (b.xmax - b.xmin);
+          const y = b.ymin + (j + .5) / (rows + 1) * (b.ymax - b.ymin);
+          const v = velocityAt(x, y);
+          if (v.solid || !Number.isFinite(v.speed) || v.speed < 0.02) continue;
+          const p = worldToScreen(x, y);
+          const len = Math.min(24, 8 + Math.log1p(v.speed) * 9);
+          const ux = v.vx / v.speed;
+          const uy = -v.vy / v.speed;
+          const x2 = p.x + ux * len;
+          const y2 = p.y + uy * len;
+          g.beginPath();
+          g.moveTo(p.x - ux * len * .45, p.y - uy * len * .45);
+          g.lineTo(x2, y2);
+          g.stroke();
+          g.beginPath();
+          g.moveTo(x2, y2);
+          g.lineTo(x2 - ux * 5 - uy * 3, y2 - uy * 5 + ux * 3);
+          g.lineTo(x2 - ux * 5 + uy * 3, y2 - uy * 5 - ux * 3);
+          g.closePath();
+          g.fill();
+        }
+      }
+    }
+
+    function traceLine(seed, dir) {
+      const b = getBounds();
+      const h = Math.max(0.035, Math.min(0.09, 5.5 / state.view.scale));
+      const maxSteps = 360;
+      const pts = [];
+      let x = seed.x;
+      let y = seed.y;
+      for (let k = 0; k < maxSteps; k++) {
+        const p = worldToScreen(x, y);
+        if (p.x < -60 || p.x > state.view.width + 60 || p.y < -60 || p.y > state.view.height + 60) break;
+        pts.push({ x: p.x, y: p.y });
+        const v = velocityAt(x, y);
+        if (v.solid || !Number.isFinite(v.speed) || v.speed < 0.01 || v.speed > 500) break;
+        const step = h * dir;
+        x += step * v.vx / v.speed;
+        y += step * v.vy / v.speed;
+        if (x < b.xmin - 1 || x > b.xmax + 1 || y < b.ymin - 1 || y > b.ymax + 1) break;
+      }
+      return pts;
+    }
+
+    function drawStreamlines(g) {
+      const b = getBounds();
+      const n = state.sim.lineDensity;
+      const aspect = Math.max(0.5, state.view.width / Math.max(1, state.view.height));
+      const cols = Math.max(6, Math.round(n * Math.sqrt(aspect)));
+      const rows = Math.max(5, Math.round(n / Math.sqrt(aspect) * .65));
+      const seeds = [];
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const jitter = ((i * 37 + j * 17) % 11) / 11;
+          seeds.push({
+            x: b.xmin + (i + 0.5 + (jitter - .5) * .18) / cols * (b.xmax - b.xmin),
+            y: b.ymin + (j + 0.5 + (.5 - jitter) * .18) / rows * (b.ymax - b.ymin)
+          });
+        }
+      }
+
+      g.lineWidth = 1.15;
+      g.strokeStyle = "rgba(8,117,111,.46)";
+      for (const seed of seeds) {
+        const v = velocityAt(seed.x, seed.y);
+        if (v.solid || !Number.isFinite(v.speed) || v.speed > 200) continue;
+        const back = traceLine(seed, -1).reverse();
+        const forward = traceLine(seed, 1);
+        const pts = back.concat(forward.slice(1));
+        if (pts.length < 8) continue;
+        g.beginPath();
+        g.moveTo(pts[0].x, pts[0].y);
+        for (let k = 1; k < pts.length; k++) g.lineTo(pts[k].x, pts[k].y);
+        g.stroke();
+      }
+    }
+
+    function approximateStagnation() {
+      const b = getBounds();
+      const nx = 48;
+      const ny = 38;
+      const samples = [];
+      for (let i = 0; i <= nx; i++) {
+        for (let j = 0; j <= ny; j++) {
+          const x = b.xmin + i / nx * (b.xmax - b.xmin);
+          const y = b.ymin + j / ny * (b.ymax - b.ymin);
+          const v = velocityAt(x, y);
+          if (!v.solid && Number.isFinite(v.speed)) samples.push({ x, y, s: v.speed });
+        }
+      }
+      samples.sort((a, b2) => a.s - b2.s);
+      const accepted = [];
+      const minSep = Math.max((b.xmax - b.xmin) / 12, 0.28);
+      const baseline = samples[Math.min(samples.length - 1, Math.floor(samples.length * .25))]?.s || 1;
+      const threshold = Math.max(0.045, baseline * .26);
+      for (const s of samples.slice(0, 160)) {
+        if (s.s > threshold && accepted.length >= 2) break;
+        if (s.s > threshold * 1.7) continue;
+        if (accepted.some(p => Math.hypot(p.x - s.x, p.y - s.y) < minSep)) continue;
+        accepted.push(refineStagnation(s.x, s.y));
+        if (accepted.length >= 8) break;
+      }
+      state.stagnation = accepted.filter(p => {
+        const v = velocityAt(p.x, p.y);
+        return !v.solid && Number.isFinite(v.speed) && v.speed < threshold * 1.8;
+      });
+    }
+
+    function refineStagnation(x, y) {
+      let px = x;
+      let py = y;
+      let step = 0.08;
+      for (let it = 0; it < 25; it++) {
+        const candidates = [
+          { x: px, y: py },
+          { x: px + step, y: py },
+          { x: px - step, y: py },
+          { x: px, y: py + step },
+          { x: px, y: py - step },
+          { x: px + step, y: py + step },
+          { x: px - step, y: py + step },
+          { x: px + step, y: py - step },
+          { x: px - step, y: py - step }
+        ].map(p => ({ ...p, s: velocityAt(p.x, p.y).speed }));
+        candidates.sort((a, b) => a.s - b.s);
+        px = candidates[0].x;
+        py = candidates[0].y;
+        step *= 0.72;
+      }
+      return { x: px, y: py, speed: velocityAt(px, py).speed };
+    }
+
+    function drawStagnation(g) {
+      if (!state.sim.showStagnation) return;
+      approximateStagnation();
+      g.strokeStyle = "#151b19";
+      g.lineWidth = 2;
+      for (const s of state.stagnation) {
+        const p = worldToScreen(s.x, s.y);
+        g.beginPath();
+        g.moveTo(p.x - 6, p.y - 6);
+        g.lineTo(p.x + 6, p.y + 6);
+        g.moveTo(p.x + 6, p.y - 6);
+        g.lineTo(p.x - 6, p.y + 6);
+        g.stroke();
+      }
+    }
+
+    function drawObjectIcons(g) {
+      for (const o of state.objects) {
+        if (!o.visible) continue;
+        const meta = kindMeta[o.type] || kindMeta.source;
+        if (o.type === "uniform" || o.type === "wallV" || o.type === "wallH") continue;
+        if (o.type === "cylinder" || o.type === "p6system") continue;
+        const p = worldToScreen(o.x, o.y);
+        const selected = o.id === state.selectedId;
+        g.save();
+        g.translate(p.x, p.y);
+        g.lineWidth = selected ? 3 : 2;
+        g.strokeStyle = selected ? "#111716" : meta.color;
+        g.fillStyle = o.image ? "rgba(255,255,255,.62)" : "#fff";
+        g.beginPath();
+        g.arc(0, 0, selected ? 12 : 10, 0, TAU);
+        g.fill();
+        g.stroke();
+        if (o.type === "source" || o.type === "sink") {
+          const outward = o.type === "source" || o.strength > 0;
+          g.strokeStyle = meta.color;
+          g.lineWidth = 1.6;
+          for (let a = 0; a < TAU; a += TAU / 8) {
+            const r1 = outward ? 3 : 12;
+            const r2 = outward ? 16 : 5;
+            g.beginPath();
+            g.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+            g.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+            g.stroke();
+          }
+        } else if (o.type === "vortex") {
+          g.strokeStyle = meta.color;
+          g.lineWidth = 1.8;
+          g.beginPath();
+          g.arc(0, 0, 6, o.gamma >= 0 ? -1.2 : 1.2, o.gamma >= 0 ? 4.1 : -4.1, o.gamma < 0);
+          g.stroke();
+        } else if (o.type === "dipole") {
+          g.rotate(-o.angle);
+          g.strokeStyle = meta.color;
+          g.fillStyle = meta.color;
+          g.lineWidth = 2;
+          g.beginPath();
+          g.moveTo(-15, 0);
+          g.lineTo(15, 0);
+          g.stroke();
+          g.beginPath();
+          g.moveTo(15, 0);
+          g.lineTo(8, -5);
+          g.lineTo(8, 5);
+          g.closePath();
+          g.fill();
+        }
+        g.restore();
+        const label = o.label || "";
+        if (label) {
+          g.font = "12px Inter, sans-serif";
+          g.fillStyle = "#24302d";
+          g.fillText(label, p.x + 13, p.y - 11);
+        }
+      }
+    }
+
+    function renderStatic() {
+      staticCtx.clearRect(0, 0, state.view.width, state.view.height);
+      drawGrid(staticCtx);
+      drawPressureField(staticCtx);
+      drawWallsAndSolids(staticCtx);
+      if (state.sim.showStreamlines) drawStreamlines(staticCtx);
+      if (state.sim.showVectors) drawVectors(staticCtx);
+      drawStagnation(staticCtx);
+      for (const o of state.objects) {
+        if (o.visible && o.type === "cylinder") drawForceVector(staticCtx, o);
+      }
+      drawObjectIcons(staticCtx);
+      drawPressureColorbar(staticCtx);
+      state.needsStatic = false;
+      renderStagnationBox();
+      renderPressurePlot();
+    }
+
+    function updateParticles(dt, force = false) {
+      if (!force && !state.sim.running && dt > 0) return;
+      const speedFactor = state.sim.speed;
+      const b = getBounds();
+      for (let i = 0; i < state.sim.particles.length; i++) {
+        const p = state.sim.particles[i];
+        const v = velocityAt(p.x, p.y);
+        if (v.solid || !Number.isFinite(v.speed) || v.speed < 0.003 || v.speed > 250 || p.age <= 0) {
+          state.sim.particles[i] = makeParticle(false);
+          continue;
+        }
+        const clamp = Math.min(2.8, 1 / Math.max(1, v.speed / 3));
+        p.x += v.vx * dt * speedFactor * clamp;
+        p.y += v.vy * dt * speedFactor * clamp;
+        p.age -= dt * 30;
+        if (p.x < b.xmin || p.x > b.xmax || p.y < b.ymin || p.y > b.ymax) {
+          state.sim.particles[i] = makeParticle(false);
+        }
+      }
+      state.sim.time += dt * speedFactor;
+    }
+
+    function drawParticles(g) {
+      if (!state.sim.showParticles) return;
+      g.save();
+      g.globalCompositeOperation = "multiply";
+      for (const p of state.sim.particles) {
+        const s = worldToScreen(p.x, p.y);
+        const v = velocityAt(p.x, p.y);
+        const alpha = Math.max(0.18, Math.min(0.82, p.age / 280));
+        g.fillStyle = v.speed > 1.6 ? `rgba(182,75,61,${alpha})` : `rgba(50,107,154,${alpha})`;
+        g.beginPath();
+        g.arc(s.x, s.y, 2.0, 0, TAU);
+        g.fill();
+      }
+      g.restore();
+    }
+
+    function drawSelectionOverlay(g) {
+      const o = selectedObject();
+      if (!o || o.type === "uniform") return;
+      if (o.type === "wallV") {
+        const p = worldToScreen(o.x, state.view.cy);
+        g.strokeStyle = "#08756f";
+        g.lineWidth = 1;
+        g.setLineDash([5, 5]);
+        g.beginPath();
+        g.moveTo(p.x - 12, 0);
+        g.lineTo(p.x - 12, state.view.height);
+        g.stroke();
+        g.setLineDash([]);
+      } else if (o.type === "wallH") {
+        const p = worldToScreen(state.view.cx, o.y);
+        g.strokeStyle = "#08756f";
+        g.lineWidth = 1;
+        g.setLineDash([5, 5]);
+        g.beginPath();
+        g.moveTo(0, p.y - 12);
+        g.lineTo(state.view.width, p.y - 12);
+        g.stroke();
+        g.setLineDash([]);
+      } else if (o.type === "p6system" || o.type === "cylinder") {
+        const p = worldToScreen(o.x, o.y);
+        g.strokeStyle = "#111716";
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.arc(p.x, p.y, o.radius * state.view.scale + 6, 0, TAU);
+        g.stroke();
+      } else if (typeof o.x === "number" && typeof o.y === "number") {
+        const p = worldToScreen(o.x, o.y);
+        g.strokeStyle = "#111716";
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.arc(p.x, p.y, 17, 0, TAU);
+        g.stroke();
+      }
+    }
+
+    function frame(now) {
+      const rawDt = Math.min(0.05, (now - state.lastFrame) / 1000);
+      state.lastFrame = now;
+      if (state.needsStatic) renderStatic();
+      updateParticles(rawDt * 1.4);
+      ctx.clearRect(0, 0, state.view.width, state.view.height);
+      ctx.drawImage(staticCanvas, 0, 0, state.view.width, state.view.height);
+      drawParticles(ctx);
+      drawSelectionOverlay(ctx);
+      document.getElementById("timeReadout").textContent = `t = ${fmt(state.sim.time)}`;
+      requestAnimationFrame(frame);
+    }
+
+    function renderPresetList() {
+      const list = document.getElementById("presetList");
+      list.innerHTML = "";
+      for (const p of presets) {
+        const btn = document.createElement("button");
+        btn.className = `preset-btn ${p.id === state.activePreset ? "active" : ""}`;
+        btn.innerHTML = `<span><span class="preset-title">${p.title}</span><br><span class="preset-tag">${p.tag}</span></span><span class="pill">cargar</span>`;
+        btn.addEventListener("click", () => setPreset(p.id));
+        list.appendChild(btn);
+      }
+    }
+
+    function renderObjectList() {
+      const list = document.getElementById("objectList");
+      list.innerHTML = "";
+      if (!state.objects.length) {
+        list.innerHTML = `<div class="note">No hay objetos en la escena.</div>`;
+        return;
+      }
+      for (const o of state.objects) {
+        const meta = kindMeta[o.type] || { tag: "" };
+        const btn = document.createElement("button");
+        btn.className = `object-row ${o.id === state.selectedId ? "active" : ""}`;
+        btn.innerHTML = `<span><span class="object-name">${objectLabel(o)}</span><br><span class="object-kind">${meta.tag}${o.image ? " · imagen" : ""}</span></span><span class="pill">${o.visible ? "on" : "off"}</span>`;
+        btn.addEventListener("click", () => {
+          state.selectedId = o.id;
+          invalidate();
+        });
+        list.appendChild(btn);
+      }
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[ch]));
+    }
+
+    function paramBounds(key, value) {
+      const span = Math.max(5, Math.ceil(Math.abs(value || 0) + 2));
+      const lowerKey = String(key).toLowerCase();
+      const map = {
+        x: [-span, span, 0.05],
+        y: [-span, span, 0.05],
+        x0: [-span, span, 0.05],
+        y0: [-span, span, 0.05],
+        strength: [-16, 16, 0.1],
+        gamma: [-18, 18, 0.1],
+        mu: [-24, 24, 0.1],
+        q: [-16, 16, 0.1],
+        u: [0, 6, 0.05],
+        a: [0.05, 4, 0.05],
+        d: [0.05, 6, 0.05],
+        speed: [0, 6, 0.05],
+        radius: [0.15, 3.5, 0.05],
+        distanceRatio: [1.05, 5, 0.01],
+        xi: [0.0001, 0.2, 0.0005],
+        angleDeg: [-180, 180, 1],
+        dipoleAngleDeg: [-180, 180, 1],
+        positionAngleDeg: [-180, 180, 1]
+      };
+      return map[key] || map[lowerKey] || [-10, 10, 0.1];
+    }
+
+    function inputField(label, key, value) {
+      const [min, max, step] = paramBounds(key, value);
+      const v = round(value, 4);
+      return `<div class="param-control">
+        <div class="param-head"><span>${label}</span><input data-key="${key}" data-pair="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${v}"></div>
+        <input data-key="${key}" data-pair="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${v}">
+      </div>`;
+    }
+
+    function customParamField(name, value) {
+      const [min, max, step] = paramBounds(name, value);
+      const v = round(value, 4);
+      return `<div class="param-control">
+        <div class="param-head"><span>${name}</span><input data-param="${name}" data-param-pair="${name}" type="number" min="${min}" max="${max}" step="${step}" value="${v}"></div>
+        <input data-param="${name}" data-param-pair="${name}" type="range" min="${min}" max="${max}" step="${step}" value="${v}">
+      </div>`;
+    }
+
+    function renderInspector() {
+      const box = document.getElementById("inspector");
+      const o = selectedObject();
+      if (!o) {
+        box.innerHTML = `<div class="note">Selecciona un objeto para editar sus parametros.</div>`;
+        return;
+      }
+      const meta = kindMeta[o.type] || { name: o.type };
+      let html = `<div class="fields">`;
+      html += `<div class="field"><label>nombre</label><input data-key="label" type="text" value="${esc(o.label || "")}"></div>`;
+      html += `<label class="toggle"><input data-key="visible" type="checkbox" ${o.visible ? "checked" : ""}> visible</label>`;
+      html += `<label class="toggle"><input data-key="image" type="checkbox" ${o.image ? "checked" : ""}> marcar como imagen</label>`;
+      if (typeof o.x === "number" || typeof o.y === "number") {
+        if (o.type === "wallV") {
+          html += inputField("x", "x", o.x);
+        } else if (o.type === "wallH") {
+          html += inputField("y", "y", o.y);
+        } else {
+          html += `<div class="field-row">${inputField("x", "x", o.x)}${inputField("y", "y", o.y)}</div>`;
+        }
+      }
+      if (o.type === "source" || o.type === "sink") {
+        html += inputField("Q", "strength", o.strength);
+      } else if (o.type === "vortex") {
+        html += inputField("Γ", "gamma", o.gamma);
+      } else if (o.type === "dipole") {
+        html += inputField("μ", "mu", o.mu);
+        html += inputField("angulo grados", "angleDeg", deg(o.angle));
+      } else if (o.type === "uniform") {
+        html += inputField("U∞", "speed", o.speed);
+        html += inputField("angulo grados", "angleDeg", deg(o.angle));
+      } else if (o.type === "cylinder") {
+        html += inputField("radio a", "radius", o.radius);
+        html += inputField("U∞", "speed", o.speed);
+        html += inputField("angulo grados", "angleDeg", deg(o.angle));
+        html += inputField("Γ", "gamma", o.gamma);
+      } else if (o.type === "p6system") {
+        html += inputField("radio a", "radius", o.radius);
+        html += inputField("Γ", "gamma", o.gamma);
+        html += inputField("μ", "mu", o.mu);
+        html += inputField("d/a", "distanceRatio", o.distanceRatio);
+        html += inputField("angulo dipolo", "dipoleAngleDeg", deg(o.dipoleAngle));
+        html += inputField("posicion dipolo", "positionAngleDeg", deg(o.positionAngle || 0));
+      } else if (o.type === "customPotential") {
+        compileCustomPotential(o);
+        html += `<div class="field"><label>entrada</label><select id="customModeSelect">
+          <option value="dWdz" ${o.mode !== "W" ? "selected" : ""}>dW/dz = u - iv</option>
+          <option value="W" ${o.mode === "W" ? "selected" : ""}>W(z)</option>
+        </select></div>`;
+        html += `<div class="field"><label>expresion</label><textarea class="expr-input" id="customExpression">${esc(o.expression || "")}</textarea></div>`;
+        html += inputField("xi regularizador", "xi", o.xi || 0.025);
+        html += `<div class="note">Usa z global, zc = z - (x+i y) como coordenada local, i, pi, xi. Ejemplo: U*(1-a^2/z^2)-i*Gamma/(2*pi*z).</div>`;
+        if (o._error) html += `<div class="note">Error: ${esc(o._error)}</div>`;
+        const names = o._paramNames || [];
+        if (names.length) {
+          html += `<h2>Parametros de la expresion</h2>`;
+          for (const name of names) html += customParamField(name, o.params?.[name] ?? 0);
+        }
+      }
+      html += `<button class="danger" id="deleteSelected">Borrar ${meta.name}</button>`;
+      html += `</div>`;
+      box.innerHTML = html;
+
+      box.querySelectorAll("[data-key]").forEach(el => {
+        const key = el.dataset.key;
+        const event = el.type === "checkbox" ? "change" : "input";
+        el.addEventListener(event, () => {
+          const target = selectedObject();
+          if (!target) return;
+          if (key === "label") target.label = el.value;
+          else if (key === "visible" || key === "image") target[key] = el.checked;
+          else if (key === "angleDeg") target.angle = rad(parseFloat(el.value) || 0);
+          else if (key === "dipoleAngleDeg") target.dipoleAngle = rad(parseFloat(el.value) || 0);
+          else if (key === "positionAngleDeg") target.positionAngle = rad(parseFloat(el.value) || 0);
+          else target[key] = parseFloat(el.value) || 0;
+          box.querySelectorAll(`[data-pair="${key}"]`).forEach(peer => {
+            if (peer !== el) peer.value = el.value;
+          });
+          if (target.type === "source" && target.strength < 0) target.type = "sink";
+          if (target.type === "sink" && target.strength > 0) target.type = "source";
+          state.activePreset = "";
+          state.note = "Escena personalizada.";
+          state.formula = buildFormulaFromObjects();
+          invalidate(false);
+        });
+        el.addEventListener("change", () => renderControls());
+      });
+      const modeSelect = document.getElementById("customModeSelect");
+      if (modeSelect) {
+        modeSelect.addEventListener("change", () => {
+          const target = selectedObject();
+          if (!target) return;
+          target.mode = modeSelect.value;
+          target._compiledExpression = "";
+          state.activePreset = "";
+          state.note = "Escena personalizada.";
+          state.formula = buildFormulaFromObjects();
+          invalidate();
+        });
+      }
+      const exprInput = document.getElementById("customExpression");
+      if (exprInput) {
+        exprInput.addEventListener("input", () => {
+          const target = selectedObject();
+          if (!target) return;
+          target.expression = exprInput.value;
+          target._compiledExpression = "";
+          compileCustomPotential(target);
+          state.activePreset = "";
+          state.note = "Escena personalizada.";
+          state.formula = buildFormulaFromObjects();
+          invalidate(false);
+        });
+        exprInput.addEventListener("change", () => renderControls());
+      }
+      box.querySelectorAll("[data-param]").forEach(el => {
+        const key = el.dataset.param;
+        el.addEventListener("input", () => {
+          const target = selectedObject();
+          if (!target) return;
+          target.params = target.params || {};
+          target.params[key] = parseFloat(el.value) || 0;
+          box.querySelectorAll(`[data-param-pair="${key}"]`).forEach(peer => {
+            if (peer !== el) peer.value = el.value;
+          });
+          invalidate(false);
+        });
+        el.addEventListener("change", () => renderControls());
+      });
+      document.getElementById("deleteSelected").addEventListener("click", deleteSelected);
+    }
+
+    function renderFormula() {
+      document.getElementById("formulaBox").innerHTML = state.formula.map(line => `<div>${line}</div>`).join("");
+      document.getElementById("presetNote").textContent = state.note;
+    }
+
+    function simField(label, key, value, min, max, step) {
+      const v = round(value, 4);
+      return `<div class="param-control">
+        <div class="param-head"><span>${label}</span><input data-sim-key="${key}" data-sim-pair="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${v}"></div>
+        <input data-sim-key="${key}" data-sim-pair="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${v}">
+      </div>`;
+    }
+
+    function renderPressureControls() {
+      const box = document.getElementById("pressureControls");
+      box.innerHTML = [
+        simField("rho", "rho", state.sim.rho, 0.1, 5, 0.05),
+        simField("P infinito", "pInf", state.sim.pInf, -10, 10, 0.1),
+        simField("P minimo", "pressureMin", state.sim.pressureMin, -80, 20, 0.1),
+        simField("P maximo", "pressureMax", state.sim.pressureMax, -80, 20, 0.1),
+        `<div class="field"><label>unidad</label><input data-sim-text="pressureUnit" type="text" value="${esc(state.sim.pressureUnit || "u.p.")}"></div>`,
+        `<button id="autoPressureBtn">auto escala escena</button>`
+      ].join("");
+      box.querySelectorAll("[data-sim-key]").forEach(el => {
+        const key = el.dataset.simKey;
+        el.addEventListener("input", () => {
+          state.sim[key] = parseFloat(el.value) || 0;
+          box.querySelectorAll(`[data-sim-pair="${key}"]`).forEach(peer => {
+            if (peer !== el) peer.value = el.value;
+          });
+          invalidate(false);
+        });
+        el.addEventListener("change", () => renderPressureControls());
+      });
+      box.querySelectorAll("[data-sim-text]").forEach(el => {
+        const key = el.dataset.simText;
+        el.addEventListener("input", () => {
+          state.sim[key] = el.value || "u.p.";
+          invalidate(false);
+        });
+      });
+      document.getElementById("autoPressureBtn").addEventListener("click", () => {
+        autoPressureScale();
+        invalidate();
+      });
+    }
+
+    function renderStagnationBox() {
+      const box = document.getElementById("stagnationBox");
+      if (!state.stagnation.length) {
+        box.innerHTML = `<div>No detectados en la vista.</div>`;
+        return;
+      }
+      box.innerHTML = state.stagnation
+        .slice(0, 6)
+        .map((s, i) => `<div>${i + 1}. z ≈ ${fmt(s.x)} ${s.y >= 0 ? "+" : "-"} ${fmt(Math.abs(s.y))}i</div>`)
+        .join("");
+    }
+
+    function renderControls() {
+      renderPresetList();
+      renderObjectList();
+      renderInspector();
+      renderFormula();
+      renderPressureControls();
+      document.getElementById("playBtn").textContent = state.sim.running ? "Ⅱ" : "▶";
+      document.getElementById("speedSlider").value = state.sim.speed;
+      document.getElementById("lineSlider").value = state.sim.lineDensity;
+      document.getElementById("showStreamlines").checked = state.sim.showStreamlines;
+      document.getElementById("showParticles").checked = state.sim.showParticles;
+      document.getElementById("showVectors").checked = state.sim.showVectors;
+      document.getElementById("showPressure").checked = state.sim.showPressure;
+      document.getElementById("showStagnation").checked = state.sim.showStagnation;
+      document.getElementById("snapGrid").checked = state.sim.snapGrid;
+    }
+
+    function renderPressurePlot() {
+      resizePressurePlot();
+      const rect = pressurePlot.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      pressureCtx.clearRect(0, 0, w, h);
+      pressureCtx.fillStyle = "#fff";
+      pressureCtx.fillRect(0, 0, w, h);
+      const selected = selectedObject();
+      const cyl = (selected?.type === "cylinder" || selected?.type === "p6system")
+        ? selected
+        : state.objects.find(o => (o.type === "cylinder" || o.type === "p6system") && o.visible);
+      if (!cyl) {
+        document.getElementById("pressureNote").textContent = "Selecciona o carga un cilindro para ver Cp(θ).";
+        pressureCtx.fillStyle = "#66716d";
+        pressureCtx.font = "12px Inter, sans-serif";
+        pressureCtx.fillText("sin cilindro", 14, 24);
+        return;
+      }
+      let U = Math.max(0.05, Math.abs(cyl.speed || 0));
+      if (cyl.type === "p6system") {
+        U = Math.max(0.05, Math.abs(cyl.gamma) / (TAU * cyl.radius), Math.abs(cyl.mu) / (TAU * cyl.radius * cyl.radius));
+      }
+      const pts = [];
+      for (let i = 0; i <= 180; i++) {
+        const th = i / 180 * TAU;
+        const x = cyl.x + Math.cos(th) * cyl.radius * 1.002;
+        const y = cyl.y + Math.sin(th) * cyl.radius * 1.002;
+        const v = velocityAt(x, y);
+        const cp = 1 - (v.speed * v.speed) / (U * U);
+        pts.push({ th, cp: Math.max(-8, Math.min(3, cp)) });
+      }
+      const ymin = -5;
+      const ymax = 1.5;
+      const px = th => 36 + th / TAU * (w - 52);
+      const py = cp => 12 + (ymax - cp) / (ymax - ymin) * (h - 32);
+      pressureCtx.strokeStyle = "#d8dfdc";
+      pressureCtx.lineWidth = 1;
+      pressureCtx.beginPath();
+      for (let i = 0; i <= 4; i++) {
+        const y = 12 + i / 4 * (h - 32);
+        pressureCtx.moveTo(34, y);
+        pressureCtx.lineTo(w - 12, y);
+      }
+      pressureCtx.stroke();
+      pressureCtx.strokeStyle = "#b64b3d";
+      pressureCtx.lineWidth = 2;
+      pressureCtx.beginPath();
+      pts.forEach((p, i) => {
+        const x = px(p.th);
+        const y = py(p.cp);
+        if (i === 0) pressureCtx.moveTo(x, y);
+        else pressureCtx.lineTo(x, y);
+      });
+      pressureCtx.stroke();
+      pressureCtx.fillStyle = "#45504c";
+      pressureCtx.font = "11px Inter, sans-serif";
+      pressureCtx.fillText("Cp", 10, 18);
+      pressureCtx.fillText("0", 34, h - 8);
+      pressureCtx.fillText("2π", w - 27, h - 8);
+      if (cyl.type === "p6system") {
+        const f = p6FormulaForce(cyl);
+        const canonical = Math.abs((cyl.distanceRatio || 2) - 2) < 0.01
+          && Math.abs(Math.sin((cyl.dipoleAngle || 0) - Math.PI / 2)) < 0.01
+          && Math.abs(Math.sin(cyl.positionAngle || 0)) < 0.01;
+        document.getElementById("pressureNote").textContent = canonical
+          ? `P6: Fx ≈ ${fmt(f.fx)}. Equilibrio para mu ≈ ${fmt(f.muEq)} si d=2a.`
+          : "P6 modificado: la curva usa Bernoulli numerico sobre el contorno.";
+      } else {
+        document.getElementById("pressureNote").textContent = "Cp = 1 - |v|²/U∞² sobre r = a. En flujo ideal puro sin Γ se ve d'Alembert: fuerza neta nula.";
+      }
+    }
+
+    function addObject(type) {
+      let obj;
+      const c = { x: state.view.cx, y: state.view.cy };
+      if (type === "source") obj = baseObject("source", { x: c.x - .6, y: c.y, strength: 4 });
+      if (type === "sink") obj = baseObject("sink", { x: c.x + .6, y: c.y, strength: -4 });
+      if (type === "vortex") obj = baseObject("vortex", { x: c.x, y: c.y, gamma: 5 });
+      if (type === "dipole") obj = baseObject("dipole", { x: c.x, y: c.y, mu: 4 });
+      if (type === "uniform") obj = baseObject("uniform", { speed: 1, angle: 0 });
+      if (type === "cylinder") obj = baseObject("cylinder", { x: c.x, y: c.y, radius: 1, speed: 1 });
+      if (type === "p6system") obj = baseObject("p6system", { x: c.x, y: c.y, radius: 1, gamma: 5, mu: 8.44, distanceRatio: 2, dipoleAngle: Math.PI / 2 });
+      if (type === "customPotential") obj = baseObject("customPotential", { x: c.x, y: c.y });
+      if (type === "wallV") obj = baseObject("wallV", { x: c.x });
+      if (type === "wallH") obj = baseObject("wallH", { y: c.y });
+      if (!obj) return;
+      state.objects.push(obj);
+      state.selectedId = obj.id;
+      state.activePreset = "";
+      state.formula = buildFormulaFromObjects();
+      state.note = "Escena personalizada.";
+      invalidate();
+    }
+
+    function buildFormulaFromObjects() {
+      const lines = [];
+      for (const o of state.objects) {
+        if (!o.visible) continue;
+        if (o.type === "uniform") lines.push(`${objectLabel(o)}: W = U e^(-iα) z`);
+        if (o.type === "source" || o.type === "sink") lines.push(`${objectLabel(o)}: W = Q/(2π) log(z-z0)`);
+        if (o.type === "vortex") lines.push(`${objectLabel(o)}: W = -iΓ/(2π) log(z-z0)`);
+        if (o.type === "dipole") lines.push(`${objectLabel(o)}: W = -μe^(iα)/[2π(z-z0)]`);
+        if (o.type === "cylinder") lines.push(`${objectLabel(o)}: W = U(z+a²/z)-iΓlog(z)/(2π)`);
+        if (o.type === "p6system") lines.push(`${objectLabel(o)}: W' = dipolo + imagen circular + circulacion`);
+        if (o.type === "customPotential") lines.push(`${objectLabel(o)}: ${o.mode === "W" ? "W(z)" : "dW/dz"} = ${o.expression || "0"}`);
+      }
+      return lines.length ? lines : ["W(z) = 0"];
+    }
+
+    function deleteSelected() {
+      if (!state.selectedId) return;
+      state.objects = state.objects.filter(o => o.id !== state.selectedId);
+      state.selectedId = state.objects[0]?.id || null;
+      state.formula = buildFormulaFromObjects();
+      state.note = "Escena personalizada.";
+      invalidate();
+    }
+
+    function hitTest(screenX, screenY) {
+      let best = null;
+      let bestD = 22;
+      for (const o of state.objects) {
+        if (!o.visible || o.type === "uniform") continue;
+        let p = null;
+        if (o.type === "wallV") p = { x: worldToScreen(o.x, 0).x, y: screenY };
+        else if (o.type === "wallH") p = { x: screenX, y: worldToScreen(0, o.y).y };
+        else p = worldToScreen(o.x, o.y);
+        const d = Math.hypot(p.x - screenX, p.y - screenY);
+        const isCircle = o.type === "cylinder" || o.type === "p6system";
+        const radius = isCircle ? Math.max(18, o.radius * state.view.scale) : 18;
+        const score = isCircle ? Math.abs(d - radius) : d;
+        if (score < bestD) {
+          best = o;
+          bestD = score;
+        }
+      }
+      return best;
+    }
+
+    function pointerPos(evt) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+    }
+
+    canvas.addEventListener("pointerdown", evt => {
+      canvas.setPointerCapture(evt.pointerId);
+      const p = pointerPos(evt);
+      const hit = hitTest(p.x, p.y);
+      if (hit) {
+        state.selectedId = hit.id;
+        const w = screenToWorld(p.x, p.y);
+        state.drag = { mode: "object", id: hit.id, dx: (hit.x ?? 0) - w.x, dy: (hit.y ?? 0) - w.y, start: p };
+      } else {
+        state.drag = { mode: "pan", start: p, cx: state.view.cx, cy: state.view.cy };
+      }
+      invalidate();
+    });
+
+    canvas.addEventListener("pointermove", evt => {
+      const p = pointerPos(evt);
+      const w = screenToWorld(p.x, p.y);
+      const sample = pressureAt(w.x, w.y);
+      document.getElementById("coordReadout").textContent = `z = ${fmt(w.x)} ${w.y >= 0 ? "+" : "-"} ${fmt(Math.abs(w.y))} i · |u|=${fmt(sample.speed)} · P=${fmt(sample.pressure)}`;
+      if (!state.drag) return;
+      if (state.drag.mode === "pan") {
+        state.view.cx = state.drag.cx - (p.x - state.drag.start.x) / state.view.scale;
+        state.view.cy = state.drag.cy + (p.y - state.drag.start.y) / state.view.scale;
+      } else {
+        const o = state.objects.find(item => item.id === state.drag.id);
+        if (o) {
+          if (o.type === "wallV") o.x = snap(w.x);
+          else if (o.type === "wallH") o.y = snap(w.y);
+          else {
+            o.x = snap(w.x + state.drag.dx);
+            o.y = snap(w.y + state.drag.dy);
+          }
+        }
+      }
+      state.activePreset = "";
+      state.note = "Escena personalizada.";
+      state.formula = buildFormulaFromObjects();
+      invalidate(false);
+    });
+
+    canvas.addEventListener("pointerup", evt => {
+      canvas.releasePointerCapture(evt.pointerId);
+      state.drag = null;
+      renderControls();
+    });
+
+    canvas.addEventListener("wheel", evt => {
+      evt.preventDefault();
+      const p = pointerPos(evt);
+      const before = screenToWorld(p.x, p.y);
+      const factor = evt.deltaY < 0 ? 1.12 : 0.89;
+      state.view.scale = Math.max(24, Math.min(220, state.view.scale * factor));
+      const after = screenToWorld(p.x, p.y);
+      state.view.cx += before.x - after.x;
+      state.view.cy += before.y - after.y;
+      invalidate(false);
+    }, { passive: false });
+
+    document.querySelectorAll("[data-add]").forEach(btn => {
+      btn.addEventListener("click", () => addObject(btn.dataset.add));
+    });
+    document.getElementById("deleteBtn").addEventListener("click", deleteSelected);
+    document.getElementById("fitBtn").addEventListener("click", () => { fitView(); invalidate(); });
+    document.getElementById("resetParticlesBtn").addEventListener("click", () => { resetParticles(); state.sim.time = 0; });
+    document.getElementById("exportBtn").addEventListener("click", async () => {
+      const json = JSON.stringify({ objects: state.objects, view: state.view }, null, 2);
+      try {
+        await navigator.clipboard.writeText(json);
+        document.getElementById("exportBtn").textContent = "ok";
+        setTimeout(() => document.getElementById("exportBtn").textContent = "{} ", 800);
+      } catch {
+        window.prompt("JSON de la escena", json);
+      }
+    });
+    document.getElementById("playBtn").addEventListener("click", () => {
+      state.sim.running = !state.sim.running;
+      renderControls();
+    });
+    document.getElementById("stepBtn").addEventListener("click", () => {
+      updateParticles(0.08, true);
+    });
+    document.getElementById("speedSlider").addEventListener("input", evt => {
+      state.sim.speed = parseFloat(evt.target.value);
+    });
+    document.getElementById("lineSlider").addEventListener("input", evt => {
+      state.sim.lineDensity = parseInt(evt.target.value, 10);
+      resetParticles();
+      invalidate(false);
+    });
+    for (const id of ["showStreamlines", "showParticles", "showVectors", "showPressure", "showStagnation", "snapGrid"]) {
+      document.getElementById(id).addEventListener("change", evt => {
+        const key = id === "snapGrid" ? "snapGrid" : id;
+        state.sim[key] = evt.target.checked;
+        invalidate();
+      });
+    }
+
+    window.addEventListener("resize", resize);
+
+    resize();
+    setPreset("p4_cylinder");
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

@@ -1,0 +1,1155 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guia 4 v2 - Viscosidad visual</title>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [["\\(", "\\)"], ["$", "$"]] },
+      chtml: { scale: 0.96 }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <style>
+    :root {
+      --bg: #f3f5f2;
+      --panel: #ffffff;
+      --soft: #edf2ef;
+      --ink: #202624;
+      --muted: #62716b;
+      --line: #d7e0dc;
+      --teal: #08756f;
+      --blue: #316b9a;
+      --red: #b64b3d;
+      --amber: #a97613;
+      --green: #1f8a5f;
+      --purple: #6750a4;
+      --shadow: 0 10px 28px rgba(31, 42, 38, .13);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    button {
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      padding: 7px 10px;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: #9fb0aa; background: #fbfcfb; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 320px minmax(540px, 1fr) 380px;
+      height: 100vh;
+      min-height: 640px;
+    }
+
+    aside {
+      min-width: 0;
+      overflow: auto;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+    }
+
+    aside.right {
+      border-right: 0;
+      border-left: 1px solid var(--line);
+    }
+
+    .side {
+      display: grid;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    .brand p, .note {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    section { display: grid; gap: 10px; }
+
+    h2 {
+      margin: 0;
+      color: #303936;
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .tabs, .controls { display: grid; gap: 7px; }
+
+    .tab {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+      padding: 9px;
+      min-height: 48px;
+    }
+
+    .tab.active {
+      border-color: #6fb8ae;
+      background: #dcefeb;
+    }
+
+    .tab strong {
+      display: block;
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tab span span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .pill {
+      min-width: 44px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: #edf1ef;
+      color: #293430;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .control {
+      display: grid;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .control-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .control-head input {
+      width: 92px;
+      min-height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px 6px;
+      text-align: right;
+      color: var(--ink);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--teal);
+    }
+
+    .main {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      background: #e9eeeb;
+    }
+
+    .topbar {
+      min-height: 58px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.95);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topbar h2 {
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 16px;
+      color: var(--ink);
+    }
+
+    .topbar p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      background: #fbfcfb;
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .status {
+      min-height: 34px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 12px;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .chips {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 8px;
+      border-radius: 7px;
+      border: 1px solid rgba(216,223,220,.9);
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow);
+      color: #2c3431;
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .metric-grid, .derivation, .formula {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .metric-grid { display: grid; gap: 7px; }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #edf1ef;
+    }
+
+    .metric:last-child { border-bottom: 0; padding-bottom: 0; }
+    .metric span { color: var(--muted); font-size: 12px; }
+    .metric strong { font-family: "Cascadia Mono", Consolas, monospace; font-size: 13px; text-align: right; }
+
+    .derivation {
+      display: grid;
+      gap: 9px;
+      background: var(--soft);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .step b {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #d7ece8;
+      color: #075f5a;
+      font-size: 12px;
+    }
+
+    .formula {
+      display: grid;
+      gap: 7px;
+      background: #fff;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 1160px) {
+      .app { grid-template-columns: 300px minmax(420px, 1fr); }
+      aside.right { display: none; }
+    }
+
+    @media (max-width: 760px) {
+      html, body { overflow: auto; }
+      .app { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 72vh auto; }
+      aside.right { display: block; border-left: 0; border-top: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="side">
+        <div class="brand">
+          <h1>Guia 4 v2</h1>
+          <p>Soluciones viscosas con geometria, trazadores y lectura fisica.</p>
+        </div>
+        <section>
+          <h2>Problemas</h2>
+          <div class="tabs" id="tabs"></div>
+        </section>
+        <section>
+          <h2>Parametros</h2>
+          <div class="controls" id="controls"></div>
+        </section>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h2 id="title"></h2>
+          <p id="subtitle"></p>
+        </div>
+        <div>
+          <button id="viewBtn">vista</button>
+          <button id="resetBtn">reset</button>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="scene"></canvas>
+        <div class="chips" id="legend"></div>
+      </div>
+      <div class="status">
+        <span id="statusLeft">listo</span>
+        <span id="statusRight">trazadores advectados por la solucion analitica</span>
+      </div>
+    </main>
+
+    <aside class="right">
+      <div class="side">
+        <section>
+          <h2>Magnitudes</h2>
+          <div class="metric-grid" id="metrics"></div>
+        </section>
+        <section>
+          <h2>Como sale</h2>
+          <div class="derivation" id="derivation"></div>
+        </section>
+        <section>
+          <h2>Formula final</h2>
+          <div class="formula" id="formula"></div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("scene");
+    const ctx = canvas.getContext("2d");
+    const els = {
+      tabs: document.getElementById("tabs"),
+      controls: document.getElementById("controls"),
+      title: document.getElementById("title"),
+      subtitle: document.getElementById("subtitle"),
+      metrics: document.getElementById("metrics"),
+      derivation: document.getElementById("derivation"),
+      formula: document.getElementById("formula"),
+      legend: document.getElementById("legend"),
+      statusLeft: document.getElementById("statusLeft"),
+      statusRight: document.getElementById("statusRight")
+    };
+
+    const C = {
+      teal: "#08756f",
+      blue: "#316b9a",
+      red: "#b64b3d",
+      amber: "#a97613",
+      green: "#1f8a5f",
+      purple: "#6750a4",
+      wall: "#343d3a",
+      grid: "#e6ece9",
+      glass: "rgba(136, 170, 168, .28)"
+    };
+
+    const defaults = {
+      p1: { U: 1.6, d: 1.2, mu: 1, G: 1.3, speed: 1 },
+      p2: { theta: 24, d: 0.9, mu: 1, rho: 1, g: 9.8, speed: 0.18 },
+      p4: { a: 1, mu: 1, G: 2.2, speed: 0.55 },
+      p6tc: { a: 0.7, b: 1.45, mu: 1, rho: 1, omega1: 3.2, omega2: 0.1, height: 4.8, speed: 0.9 },
+      p7: { D: 1, U: 1.2, mu: 1, rho: 1, rhoS: 2.7, Cd: 0.44, speed: 0.5 }
+    };
+
+    const state = {
+      active: "p1",
+      params: JSON.parse(JSON.stringify(defaults)),
+      particles: [],
+      t: 0,
+      width: 900,
+      height: 650,
+      dpr: 1,
+      last: performance.now(),
+      camera: { x: 0, y: 0, zoom: 1, drag: null }
+    };
+
+    const modules = [
+      {
+        id: "p1",
+        title: "P1: sandwich Couette-Poiseuille",
+        tag: "placas",
+        subtitle: "Dos planos infinitos, placa superior movil y presion que empuja.",
+        controls: [
+          ["U", "velocidad placa U", -3, 3, 0.05],
+          ["d", "separacion d", 0.35, 2.8, 0.02],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["G", "G = -dp/dx", -6, 6, 0.05],
+          ["speed", "velocidad visual", 0, 3, 0.05]
+        ],
+        formula: [
+          "\\(u(y)=\\frac{U}{d}y+\\frac{G}{2\\mu}y(d-y)\\)",
+          "\\(\\tau_{xy}(y)=\\mu\\frac{du}{dy}=\\mu\\frac{U}{d}+G\\left(\\frac d2-y\\right)\\)",
+          "\\(q=\\int_0^d u(y)\\,dy=\\frac{Ud}{2}+\\frac{Gd^3}{12\\mu}\\)"
+        ],
+        steps: [
+          "Por simetria, \\(\\vec v=u(y)\\hat x\\). Entonces \\((\\vec v\\cdot\\nabla)\\vec v=u\\partial_x\\vec v=0\\).",
+          "Navier-Stokes en \\(x\\): \\(0=-\\partial_x p+\\mu u''\\). Escribiendo \\(G=-\\partial_x p\\), queda \\(\\mu u''=-G\\).",
+          "Integramos: \\(u(y)=-Gy^2/(2\\mu)+C_1y+C_2\\). No deslizamiento: \\(u(0)=0\\), \\(u(d)=U\\).",
+          "De ahi sale el perfil. Luego \\(\\tau_{xy}=\\mu u'\\) y el caudal por ancho es \\(q=\\int_0^d u\\,dy\\)."
+        ],
+        init: initBoxParticles,
+        draw: drawP1,
+        metrics: metricsP1
+      },
+      {
+        id: "p2",
+        title: "P2: pelicula en plano inclinado",
+        tag: "film",
+        subtitle: "Una capa viscosa baja por gravedad con superficie libre.",
+        controls: [
+          ["theta", "angulo theta [deg]", 0, 70, 1],
+          ["d", "espesor d", 0.25, 2.2, 0.02],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["rho", "densidad rho", 0.2, 4, 0.05],
+          ["g", "gravedad g", 0, 15, 0.1],
+          ["speed", "velocidad visual", 0, 1.2, 0.02]
+        ],
+        formula: [
+          "\\(u(y)=\\frac{\\rho g\\sin\\theta}{\\mu}\\left(dy-\\frac{y^2}{2}\\right)\\)",
+          "\\(u_{\\max}=u(d)=\\frac{\\rho g\\sin\\theta}{2\\mu}d^2\\)",
+          "\\(\\bar u=\\frac{1}{d}\\int_0^d u\\,dy=\\frac{2}{3}u_{\\max}\\)",
+          "\\(\\dot m' = \\rho d\\bar u\\)"
+        ],
+        steps: [
+          "Elegimos \\(x\\) paralelo al plano e \\(y\\) normal. La componente motriz de la gravedad es \\(\\rho g\\sin\\theta\\).",
+          "La ecuacion estacionaria queda \\(0=\\rho g\\sin\\theta+\\mu u''\\).",
+          "Condiciones: no deslizamiento \\(u(0)=0\\) y superficie libre sin esfuerzo \\(\\tau(d)=\\mu u'(d)=0\\).",
+          "Con esas constantes queda una parabola cuyo maximo esta en \\(y=d\\). La integral da \\(\\bar u=2u_{\\max}/3\\)."
+        ],
+        init: initFilmParticles,
+        draw: drawP2,
+        metrics: metricsP2
+      },
+      {
+        id: "p4",
+        title: "P4: Poiseuille cilindrico",
+        tag: "tubo",
+        subtitle: "Perfil axial parabolico dentro de un tubo circular.",
+        controls: [
+          ["a", "radio a", 0.25, 2.4, 0.02],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["G", "G = -dp/dx", 0, 8, 0.05],
+          ["speed", "velocidad visual", 0, 1.8, 0.03]
+        ],
+        formula: [
+          "\\(u(r)=\\frac{G}{4\\mu}(a^2-r^2)\\)",
+          "\\(Q=\\int_0^a 2\\pi r u(r)\\,dr=\\frac{\\pi G a^4}{8\\mu}\\)",
+          "\\(\\bar u=Q/(\\pi a^2)=u_{\\max}/2\\)",
+          "\\(\\tau_w=\\mu u'(a)=-Ga/2\\)"
+        ],
+        steps: [
+          "La simetria del tubo permite \\(\\vec v=u(r)\\hat x\\). El laplaciano radial es \\((1/r)(r u')'\\).",
+          "Con \\(G=-dp/dx\\), la ecuacion es \\((1/r)(ru')'=-G/\\mu\\).",
+          "La regularidad en \\(r=0\\) elimina el termino logaritmico y la pared impone \\(u(a)=0\\).",
+          "Integrar \\(2\\pi r u(r)\\) produce \\(Q\\propto a^4\\): dos potencias vienen del area y dos del perfil."
+        ],
+        init: initTubeParticles,
+        draw: drawP4,
+        metrics: metricsP4
+      },
+      {
+        id: "p6tc",
+        title: "P6(iv): Taylor-Couette laminar",
+        tag: "TC",
+        subtitle: "Cilindros coaxiales rotantes, contornos de velocidad y vortices cualitativos.",
+        controls: [
+          ["a", "radio interno a", 0.25, 1.4, 0.02],
+          ["b", "radio externo b", 0.55, 2.6, 0.02],
+          ["omega1", "Omega interno", -6, 6, 0.05],
+          ["omega2", "Omega externo", -6, 6, 0.05],
+          ["mu", "viscosidad mu", 0.15, 5, 0.05],
+          ["rho", "densidad rho", 0.2, 4, 0.05],
+          ["height", "altura visual", 2, 8, 0.1],
+          ["speed", "velocidad visual", 0, 2, 0.03]
+        ],
+        formula: [
+          "\\(v_\\theta(r)=Ar+\\frac{B}{r}\\)",
+          "\\(A=\\frac{\\Omega_2 b^2-\\Omega_1 a^2}{b^2-a^2}\\)",
+          "\\(B=\\frac{a^2b^2(\\Omega_1-\\Omega_2)}{b^2-a^2}\\)",
+          "\\(\\tau_{r\\theta}=\\mu\\left(\\frac{dv_\\theta}{dr}-\\frac{v_\\theta}{r}\\right)=-\\frac{2\\mu B}{r^2}\\)",
+          "\\(N_1/L=-4\\pi\\mu B\\)"
+        ],
+        steps: [
+          "Suponemos flujo laminar puramente azimutal: \\(\\vec v=v_\\theta(r)\\hat\\theta\\).",
+          "La ecuacion viscosa radial para la componente \\(\\theta\\) da una ODE con solucion \\(Ar+B/r\\).",
+          "No deslizamiento: \\(v_\\theta(a)=\\Omega_1 a\\) y \\(v_\\theta(b)=\\Omega_2 b\\). Eso fija \\(A\\) y \\(B\\).",
+          "El esfuerzo viscoso da el torque. La imagen de vortices es cualitativa: aparece cuando el criterio de Rayleigh indica que el perfil laminar seria inestable."
+        ],
+        init: initTCParticles,
+        draw: drawP6TC,
+        metrics: metricsP6TC
+      },
+      {
+        id: "p7",
+        title: "P7: esfera y arrastre dimensional",
+        tag: "Re",
+        subtitle: "Comparacion visual entre arrastre viscoso e inercial.",
+        controls: [
+          ["D", "diametro D", 0.15, 3.4, 0.02],
+          ["U", "velocidad U", 0.02, 6, 0.02],
+          ["mu", "viscosidad mu", 0.05, 5, 0.02],
+          ["rho", "densidad fluido rho", 0.1, 5, 0.05],
+          ["rhoS", "densidad esfera rho_s", 0.1, 10, 0.05],
+          ["Cd", "Cd alto Re", 0.1, 1.2, 0.01],
+          ["speed", "velocidad visual", 0, 2, 0.03]
+        ],
+        formula: [
+          "\\(Re=\\rho U D/\\mu\\)",
+          "\\(Re\\ll1:\\quad F_D=3\\pi\\mu D U\\)",
+          "\\(Re\\gg1:\\quad F_D\\approx\\frac12 C_D\\rho U^2\\frac{\\pi D^2}{4}\\)",
+          "\\(U_{t,S}=\\frac{(\\rho_s-\rho)gD^2}{18\\mu}\\)"
+        ],
+        steps: [
+          "Las variables fluidas son \\(U,D,\\mu,\\rho\\). Su combinacion adimensional natural es \\(Re=\\rho UD/\\mu\\).",
+          "Si \\(Re\\ll1\\), la inercia se desprecia y solo queda la escala viscosa: \\(F\\sim\\mu UD\\).",
+          "Si \\(Re\\gg1\\), domina el flujo inercial: presion dinamica \\(\\rho U^2\\) por area \\(D^2\\).",
+          "Para velocidad terminal se iguala arrastre con peso efectivo \\((\\rho_s-\rho)g\\pi D^3/6\\)."
+        ],
+        init: initWakeParticles,
+        draw: drawP7,
+        metrics: metricsP7
+      }
+    ];
+
+    const byId = Object.fromEntries(modules.map(m => [m.id, m]));
+
+    function fmt(v) {
+      if (!Number.isFinite(v)) return "-";
+      const a = Math.abs(v);
+      if (a >= 1000 || (a > 0 && a < 0.001)) return v.toExponential(2);
+      return (Math.round(v * 1000) / 1000).toString();
+    }
+
+    function p() { return state.params[state.active]; }
+    function rad(deg) { return deg * Math.PI / 180; }
+    function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function colorMap(t) {
+      const stops = [
+        [0.00, 64, 74, 150],
+        [0.30, 47, 132, 165],
+        [0.55, 45, 178, 139],
+        [0.78, 154, 212, 91],
+        [1.00, 244, 230, 96]
+      ];
+      const x = clamp(t, 0, 1);
+      for (let i = 1; i < stops.length; i++) {
+        const a = stops[i - 1], b = stops[i];
+        if (x <= b[0]) {
+          const f = (x - a[0]) / (b[0] - a[0]);
+          return `rgb(${Math.round(lerp(a[1], b[1], f))},${Math.round(lerp(a[2], b[2], f))},${Math.round(lerp(a[3], b[3], f))})`;
+        }
+      }
+      return "rgb(244,230,96)";
+    }
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      state.dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      state.width = Math.max(420, rect.width);
+      state.height = Math.max(360, rect.height);
+      canvas.width = Math.round(state.width * state.dpr);
+      canvas.height = Math.round(state.height * state.dpr);
+      ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    }
+
+    function resetView() {
+      state.camera.x = 0;
+      state.camera.y = 0;
+      state.camera.zoom = 1;
+    }
+
+    function beginScene() {
+      ctx.save();
+      ctx.translate(state.width / 2, state.height / 2);
+      ctx.scale(state.camera.zoom, state.camera.zoom);
+      ctx.translate(-state.width / 2 + state.camera.x, -state.height / 2 + state.camera.y);
+    }
+
+    function endScene() {
+      ctx.restore();
+    }
+
+    function project(x, y, z, scale = 1, ox = state.width * .48, oy = state.height * .62) {
+      return {
+        x: ox + scale * (x - 0.72 * z),
+        y: oy + scale * (0.36 * x + 0.36 * z - y)
+      };
+    }
+
+    function poly(points, fill, stroke = null, width = 1) {
+      if (!points.length) return;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+      ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = width; ctx.stroke(); }
+    }
+
+    function arrow(x1, y1, x2, y2, color, w = 2) {
+      const a = Math.atan2(y2 - y1, x2 - x1);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 10 * Math.cos(a) + 5 * Math.sin(a), y2 - 10 * Math.sin(a) - 5 * Math.cos(a));
+      ctx.lineTo(x2 - 10 * Math.cos(a) - 5 * Math.sin(a), y2 - 10 * Math.sin(a) + 5 * Math.cos(a));
+      ctx.closePath(); ctx.fill();
+    }
+
+    function drawParticle(pt, color, r = 3) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function resetParticles() {
+      state.particles = [];
+      byId[state.active].init();
+    }
+
+    function initBoxParticles() {
+      for (let i = 0; i < 420; i++) {
+        state.particles.push({ x: Math.random(), y: Math.random(), z: Math.random(), age: Math.random() });
+      }
+    }
+
+    function initFilmParticles() {
+      for (let i = 0; i < 380; i++) state.particles.push({ x: Math.random(), y: Math.random(), z: Math.random() });
+    }
+
+    function initTubeParticles() {
+      for (let i = 0; i < 520; i++) {
+        const rr = Math.sqrt(Math.random());
+        state.particles.push({ x: Math.random(), r: rr, th: Math.random() * Math.PI * 2 });
+      }
+    }
+
+    function initTCParticles() {
+      for (let i = 0; i < 520; i++) {
+        state.particles.push({ r: Math.random(), th: Math.random() * Math.PI * 2, z: Math.random() });
+      }
+    }
+
+    function initWakeParticles() {
+      for (let i = 0; i < 360; i++) state.particles.push({ x: Math.random(), y: Math.random(), z: Math.random() });
+    }
+
+    function uP1(y) {
+      const q = state.params.p1;
+      const d = Math.max(.001, q.d), mu = Math.max(.001, q.mu);
+      return q.U * y / d + q.G / (2 * mu) * y * (d - y);
+    }
+
+    function metricsP1() {
+      const q = state.params.p1, d = Math.max(.001, q.d), mu = Math.max(.001, q.mu);
+      const tau0 = mu * q.U / d + q.G * d / 2;
+      const taud = mu * q.U / d - q.G * d / 2;
+      const flux = q.U * d / 2 + q.G * d ** 3 / (12 * mu);
+      const y0 = q.G === 0 ? NaN : d / 2 + mu * q.U / (q.G * d);
+      return [
+        ["q por ancho", fmt(flux)],
+        ["tau y=0", fmt(tau0)],
+        ["tau y=d", fmt(taud)],
+        ["y0", y0 >= 0 && y0 <= d ? fmt(y0) : "fuera"],
+        ["u(0), u(d)", `${fmt(uP1(0))}, ${fmt(uP1(d))}`]
+      ];
+    }
+
+    function drawP1(dt) {
+      const q = state.params.p1, d = Math.max(.001, q.d);
+      const L = 5.2, W = 2.8, sc = Math.min(state.width / 8.8, state.height / 5.5);
+      const yScale = 1.55 / d;
+      const P = (x, y, z) => project(x, y * yScale, z, sc);
+      beginScene();
+      const bottom = [P(-L/2,0,-W/2), P(L/2,0,-W/2), P(L/2,0,W/2), P(-L/2,0,W/2)];
+      const top = [P(-L/2,d,-W/2), P(L/2,d,-W/2), P(L/2,d,W/2), P(-L/2,d,W/2)];
+      poly(bottom, "#cdd4d1", C.wall, 1.5);
+      poly(top, "rgba(185,194,190,.82)", C.wall, 1.5);
+      arrow(P(-1.2,d,W/2+.25).x, P(-1.2,d,W/2+.25).y, P(.55,d,W/2+.25).x, P(.55,d,W/2+.25).y, C.amber, 3);
+      ctx.fillStyle = "#52615c"; ctx.font = "12px Inter, sans-serif"; ctx.fillText("placa superior", P(-L/2,d,-W/2).x, P(-L/2,d,-W/2).y - 10);
+
+      const maxAbs = Math.max(.08, ...Array.from({length: 60}, (_, i) => Math.abs(uP1(d * i / 59))));
+      for (const part of state.particles) {
+        const y = part.y * d;
+        const u = uP1(y);
+        part.x = (part.x + dt * q.speed * u / maxAbs * .18 + 2) % 1;
+        const x = -L/2 + part.x * L;
+        const z = -W/2 + part.z * W;
+        const pt = P(x, y, z);
+        drawParticle(pt, colorMap(Math.abs(u) / maxAbs), 2.2);
+      }
+      for (let i = 0; i <= 8; i++) {
+        const y = d * i / 8, u = uP1(y);
+        const p0 = P(-L/2 - .25, y, -W/2 - .35);
+        const p1 = P(-L/2 - .25 + 1.0 * u / maxAbs, y, -W/2 - .35);
+        arrow(p0.x, p0.y, p1.x, p1.y, C.teal, 1.5);
+      }
+      endScene();
+      drawProfileInset(y => uP1(y * d), "u(y)", maxAbs, C.teal);
+      setLegend([{label:"trazadores", color:C.teal}, {label:"velocidad mayor", color:"#f4e660"}, {label:"placas", color:"#9ca6a1"}]);
+      setStatus(`perfil Couette + Poiseuille, G=${fmt(q.G)}`);
+    }
+
+    function uP2(y) {
+      const q = state.params.p2, d = Math.max(.001, q.d), mu = Math.max(.001, q.mu);
+      return q.rho * q.g * Math.sin(rad(q.theta)) / mu * (d * y - y * y / 2);
+    }
+
+    function metricsP2() {
+      const q = state.params.p2, d = Math.max(.001, q.d), mu = Math.max(.001, q.mu);
+      const Cg = q.rho * q.g * Math.sin(rad(q.theta)) / mu;
+      const umax = Cg * d * d / 2;
+      const uavg = Cg * d * d / 3;
+      return [
+        ["u max", fmt(umax)],
+        ["u promedio", fmt(uavg)],
+        ["u_prom/u_max", fmt(uavg / Math.max(1e-9, umax))],
+        ["q masico/ancho", fmt(q.rho * uavg * d)],
+        ["tau pared", fmt(q.rho * q.g * Math.sin(rad(q.theta)) * d)]
+      ];
+    }
+
+    function drawP2(dt) {
+      const q = state.params.p2, d = Math.max(.001, q.d);
+      const L = 5.4, W = 2.6, sc = Math.min(state.width / 8.6, state.height / 5.4);
+      const slope = rad(q.theta);
+      const yScale = 1.35 / d;
+      const P = (x, y, z) => {
+        const X = x * Math.cos(slope) - y * yScale * Math.sin(slope);
+        const Y = x * Math.sin(slope) + y * yScale * Math.cos(slope);
+        return project(X, Y, z, sc, state.width*.48, state.height*.70);
+      };
+      beginScene();
+      const base = [P(-L/2,0,-W/2), P(L/2,0,-W/2), P(L/2,0,W/2), P(-L/2,0,W/2)];
+      const surf = [P(-L/2,d,-W/2), P(L/2,d,-W/2), P(L/2,d,W/2), P(-L/2,d,W/2)];
+      poly(base, "#b7c0bc", C.wall, 1.5);
+      poly(surf, "rgba(80,170,160,.28)", "#75aaa4", 1.2);
+      const maxU = Math.max(.08, uP2(d));
+      for (const part of state.particles) {
+        const y = part.y * d, u = uP2(y);
+        part.x = (part.x + dt * q.speed * u / maxU * .12 + 2) % 1;
+        const pt = P(-L/2 + part.x * L, y, -W/2 + part.z * W);
+        drawParticle(pt, colorMap(u / maxU), 2.2);
+      }
+      arrow(P(-.5,d,W/2+.25).x, P(-.5,d,W/2+.25).y, P(.9,d,W/2+.25).x, P(.9,d,W/2+.25).y, C.blue, 2.5);
+      arrow(P(-L/2-.4,d*.9,-W/2-.6).x, P(-L/2-.4,d*.9,-W/2-.6).y, P(-L/2-.4,d*.25,-W/2-.6).x, P(-L/2-.4,d*.25,-W/2-.6).y, C.red, 2);
+      endScene();
+      drawProfileInset(y => uP2(y * d), "u(y)", maxU, C.teal);
+      setLegend([{label:"pelicula viscosa", color:C.teal}, {label:"superficie libre", color:"#75aaa4"}, {label:"gravedad", color:C.red}]);
+      setStatus(`theta=${fmt(q.theta)} deg, superficie libre con tau=0`);
+    }
+
+    function uP4(r) {
+      const q = state.params.p4, a = Math.max(.001, q.a), mu = Math.max(.001, q.mu);
+      return q.G * (a*a - r*r) / (4 * mu);
+    }
+
+    function metricsP4() {
+      const q = state.params.p4, a = Math.max(.001, q.a), mu = Math.max(.001, q.mu);
+      const Q = Math.PI * q.G * a**4 / (8 * mu);
+      return [
+        ["u max", fmt(uP4(0))],
+        ["u promedio", fmt(Q / (Math.PI * a*a))],
+        ["Q", fmt(Q)],
+        ["Q/a^4", fmt(Q / a**4)],
+        ["tau pared", fmt(-q.G * a / 2)]
+      ];
+    }
+
+    function drawP4(dt) {
+      const q = state.params.p4, a = Math.max(.001, q.a);
+      const cx = state.width*.48, top = state.height*.13, H = state.height*.70;
+      const R = Math.min(state.width*.22, state.height*.18);
+      const maxU = Math.max(.08, uP4(0));
+      beginScene();
+      for (let j = 0; j < 90; j++) {
+        const y0 = top + H*j/90, y1 = top + H*(j+1)/90;
+        const rr = Math.abs((j/89)*2 - 1) * a;
+        ctx.fillStyle = colorMap(uP4(rr)/maxU);
+        ctx.fillRect(cx-R, y0, 2*R, y1-y0+1);
+      }
+      ctx.fillStyle = "rgba(255,255,255,.36)";
+      ctx.fillRect(cx-R, top, 2*R, H);
+      ctx.strokeStyle = C.wall; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(cx, top, R, R*.18, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, top+H, R, R*.18, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx-R, top); ctx.lineTo(cx-R, top+H);
+      ctx.moveTo(cx+R, top); ctx.lineTo(cx+R, top+H);
+      ctx.stroke();
+      for (const part of state.particles) {
+        const rr = Math.sqrt(part.r) * a;
+        const u = uP4(rr);
+        part.x = (part.x + dt * q.speed * u / maxU * .13) % 1;
+        const axialY = top + (1-part.x) * H;
+        const radX = Math.cos(part.th) * rr/a * R;
+        const radY = Math.sin(part.th) * rr/a * R*.18;
+        drawParticle({x:cx+radX, y:axialY+radY}, colorMap(u/maxU), 2.0);
+      }
+      endScene();
+      drawProfileInset(s => uP4(Math.abs(2*s-1)*a), "u(r)", maxU, C.teal);
+      drawColorbar(cx+R+30, top+30, H*.45);
+      setLegend([{label:"perfil parabolico", color:C.teal}, {label:"pared del tubo", color:C.wall}, {label:"centro mas rapido", color:"#f4e660"}]);
+      setStatus(`ley de Poiseuille: Q proporcional a a^4`);
+    }
+
+    function tcCoeffs() {
+      const q = state.params.p6tc;
+      if (q.b <= q.a) q.b = q.a + .05;
+      const a = Math.max(.001, q.a), b = Math.max(a+.001, q.b);
+      const den = b*b - a*a;
+      const A = (q.omega2*b*b - q.omega1*a*a) / den;
+      const B = a*a*b*b*(q.omega1-q.omega2) / den;
+      return {q,a,b,A,B,v:r=>A*r+B/r,omega:r=>A+B/(r*r)};
+    }
+
+    function tcStable(r) {
+      for (let i=0;i<=40;i++) {
+        const rr = r.a + (r.b-r.a)*i/40;
+        const L = r.A*rr*rr + r.B;
+        if (4*r.A*rr*L < -1e-9) return false;
+      }
+      return true;
+    }
+
+    function metricsP6TC() {
+      const r = tcCoeffs(), nu = r.q.mu / Math.max(1e-9, r.q.rho), gap = r.b-r.a;
+      const Rei = Math.abs(r.q.omega1) * r.a * gap / Math.max(1e-9, nu);
+      const B = r.B;
+      return [
+        ["A", fmt(r.A)],
+        ["B", fmt(r.B)],
+        ["tau(a)", fmt(-2*r.q.mu*B/(r.a*r.a))],
+        ["tau(b)", fmt(-2*r.q.mu*B/(r.b*r.b))],
+        ["N1/L", fmt(-4*Math.PI*r.q.mu*B)],
+        ["Re interno", fmt(Rei)],
+        ["Rayleigh", tcStable(r) ? "estable" : "inestable"]
+      ];
+    }
+
+    function drawP6TC(dt) {
+      const r = tcCoeffs(), stable = tcStable(r);
+      const cx = state.width*.50, top = state.height*.13, H = state.height*.70;
+      const R = Math.min(state.width*.22, state.height*.17);
+      const Rin = R * r.a/r.b;
+      const maxV = Math.max(.05, Math.abs(r.v(r.a)), Math.abs(r.v(r.b)));
+      beginScene();
+      for (let j=0;j<90;j++) {
+        const y0 = top + H*j/90, y1 = top + H*(j+1)/90;
+        const z = j/90;
+        const wave = stable ? 0 : .18*Math.sin(z*r.q.height*Math.PI*2 + state.t*1.5);
+        const midr = r.a + (r.b-r.a)*(0.72 + wave*.35);
+        const value = Math.abs(r.v(clamp(midr, r.a, r.b))) / maxV;
+        ctx.fillStyle = colorMap(value);
+        ctx.fillRect(cx-R, y0, 2*R, y1-y0+1);
+      }
+      ctx.fillStyle = "rgba(255,255,255,.54)";
+      ctx.fillRect(cx-Rin, top-4, 2*Rin, H+8);
+      ctx.strokeStyle = C.wall; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx-R, top); ctx.lineTo(cx-R, top+H); ctx.moveTo(cx+R, top); ctx.lineTo(cx+R, top+H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-Rin, top); ctx.lineTo(cx-Rin, top+H); ctx.moveTo(cx+Rin, top); ctx.lineTo(cx+Rin, top+H); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, top, R, R*.20, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, top+H, R, R*.20, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, top, Rin, Rin*.20, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, top+H, Rin, Rin*.20, 0, 0, Math.PI*2); ctx.stroke();
+      if (!stable) {
+        ctx.strokeStyle = "rgba(31,138,95,.78)"; ctx.lineWidth = 1.7;
+        const cells = Math.max(3, Math.round(r.q.height));
+        for (let k=0;k<cells;k++) {
+          const cy = top + H*(k+.5)/cells;
+          ctx.beginPath(); ctx.ellipse(cx, cy, R*.82, H/cells*.36, 0, 0, Math.PI*2); ctx.stroke();
+        }
+      }
+      for (const part of state.particles) {
+        const rr = r.a + (r.b-r.a)*part.r;
+        part.th += dt*r.q.speed*r.omega(rr);
+        if (!stable) part.z = (part.z + dt*.06*Math.sin(part.th*2 + state.t)) % 1;
+        const screenR = Rin + (R-Rin)*part.r;
+        const x = cx + Math.cos(part.th)*screenR;
+        const y = top + part.z*H + Math.sin(part.th)*screenR*.08;
+        const behindInner = Math.sin(part.th) < 0 && Math.abs(x - cx) < Rin * 1.02;
+        if (behindInner) continue;
+        drawParticle({x,y}, colorMap(Math.abs(r.v(rr))/maxV), 2.1);
+      }
+      ctx.fillStyle = "rgba(255,255,255,.46)";
+      ctx.fillRect(cx-Rin, top-4, 2*Rin, H+8);
+      ctx.strokeStyle = C.wall;
+      ctx.beginPath(); ctx.ellipse(cx, top, Rin, Rin*.20, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, top+H, Rin, Rin*.20, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-Rin, top); ctx.lineTo(cx-Rin, top+H); ctx.moveTo(cx+Rin, top); ctx.lineTo(cx+Rin, top+H); ctx.stroke();
+      endScene();
+      drawColorbar(cx+R+24, top+20, H*.45);
+      setLegend([{label:"|v_theta| contornos", color:"#3c82a6"}, {label:"vortices cualitativos", color:C.green}, {label:"trazadores", color:"#f4e660"}]);
+      setStatus(stable ? "perfil laminar estable por Rayleigh" : "Rayleigh inestable: aparecen celdas cualitativas");
+    }
+
+    function metricsP7() {
+      const q = state.params.p7;
+      const D = Math.max(.001,q.D), U=Math.max(.001,q.U), mu=Math.max(.001,q.mu), rho=Math.max(.001,q.rho);
+      const Re = rho*U*D/mu;
+      const Fs = 3*Math.PI*mu*D*U;
+      const Fi = .5*q.Cd*rho*U*U*Math.PI*D*D/4;
+      const dr = Math.max(0,q.rhoS-q.rho);
+      const UtS = dr*9.8*D*D/(18*mu);
+      const UtI = Math.sqrt(Math.max(0,4*dr*9.8*D/(3*q.Cd*rho)));
+      return [["Re",fmt(Re)],["F Stokes",fmt(Fs)],["F inercial",fmt(Fi)],["Ut Stokes",fmt(UtS)],["Ut inercial",fmt(UtI)],["regimen",Re<1?"Stokes":Re>1000?"inercial":"intermedio"]];
+    }
+
+    function drawP7(dt) {
+      const q = state.params.p7;
+      const cx = state.width*.52, cy = state.height*.50, R = Math.min(state.width,state.height)*.12*q.D;
+      ctx.fillStyle = "rgba(49,107,154,.06)"; ctx.fillRect(0,0,state.width,state.height);
+      beginScene();
+      for (const part of state.particles) {
+        part.x += dt*q.speed*q.U*.18;
+        if (part.x>1) { part.x=0; part.y=Math.random(); part.z=Math.random(); }
+        const x = lerp(40,state.width-40,part.x);
+        const y = lerp(80,state.height-80,part.y);
+        const dx=x-cx, dy=y-cy, d=Math.hypot(dx,dy);
+        const avoid = Math.max(0, R*1.55-d)/(R*1.55);
+        const yy = y + Math.sign(dy||1)*avoid*R*.85;
+        drawParticle({x,y:yy}, C.blue, 1.8);
+      }
+      const grad = ctx.createRadialGradient(cx-R*.25, cy-R*.35, R*.2, cx, cy, R);
+      grad.addColorStop(0, "#f5f6f4"); grad.addColorStop(1, "#8e9994");
+      ctx.fillStyle = grad; ctx.strokeStyle = C.wall; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      arrow(cx-R*2.3, cy-R*1.6, cx-R*.9, cy-R*1.6, C.blue, 3);
+      arrow(cx+R*.9, cy+R*1.4, cx+R*2.2, cy+R*1.4, C.red, 3);
+      ctx.fillStyle="#52615c"; ctx.font="13px Inter, sans-serif";
+      ctx.fillText("flujo U", cx-R*2.35, cy-R*1.8);
+      ctx.fillText("arrastre", cx+R*.9, cy+R*1.2);
+      endScene();
+      drawDragBars();
+      setLegend([{label:"trazadores de fluido", color:C.blue}, {label:"esfera", color:"#8e9994"}, {label:"arrastre", color:C.red}]);
+      const Re = q.rho*q.U*q.D/Math.max(.001,q.mu);
+      setStatus(Re<1 ? "domina viscosidad: F ~ mu U D" : Re>1000 ? "domina inercia: F ~ rho U^2 D^2" : "zona intermedia entre escalas");
+    }
+
+    function drawProfileInset(fn, label, maxAbs, color) {
+      const x0 = state.width - 180, y0 = 70, w = 120, h = 180;
+      ctx.fillStyle = "rgba(255,255,255,.86)"; ctx.strokeStyle = "#d7e0dc"; ctx.lineWidth = 1;
+      ctx.fillRect(x0-22,y0-28,w+50,h+54); ctx.strokeRect(x0-22,y0-28,w+50,h+54);
+      ctx.strokeStyle = "#d7e0dc"; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, y0+h); ctx.moveTo(x0, y0+h); ctx.lineTo(x0+w, y0+h); ctx.stroke();
+      const pts=[];
+      for(let i=0;i<=80;i++){ const s=i/80, v=fn(s); pts.push({x:x0+w*.5+v/maxAbs*w*.45,y:y0+h-s*h}); }
+      ctx.strokeStyle=color; ctx.lineWidth=2.2; ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); for(const pnt of pts.slice(1)) ctx.lineTo(pnt.x,pnt.y); ctx.stroke();
+      ctx.fillStyle="#52615c"; ctx.font="12px Inter, sans-serif"; ctx.fillText(label,x0,y0-10);
+    }
+
+    function drawColorbar(x,y,h) {
+      for(let j=0;j<h;j++){ ctx.fillStyle=colorMap(1-j/h); ctx.fillRect(x,y+j,18,1); }
+      ctx.strokeStyle="#52615c"; ctx.strokeRect(x,y,18,h);
+      ctx.fillStyle="#52615c"; ctx.font="11px Inter, sans-serif"; ctx.fillText("|v|",x-2,y-8); ctx.fillText("alto",x+24,y+6); ctx.fillText("bajo",x+24,y+h);
+    }
+
+    function drawDragBars() {
+      const m = Object.fromEntries(metricsP7());
+      const Fs = parseFloat(m["F Stokes"]) || 0, Fi = parseFloat(m["F inercial"]) || 0;
+      const max = Math.max(Fs,Fi,.001), x=70, y=80, w=170;
+      ctx.fillStyle="rgba(255,255,255,.88)"; ctx.strokeStyle="#d7e0dc"; ctx.fillRect(x-18,y-28,w+52,88); ctx.strokeRect(x-18,y-28,w+52,88);
+      ctx.fillStyle=C.teal; ctx.fillRect(x,y,w*Fs/max,16);
+      ctx.fillStyle=C.red; ctx.fillRect(x,y+34,w*Fi/max,16);
+      ctx.fillStyle="#52615c"; ctx.font="12px Inter, sans-serif"; ctx.fillText("Stokes",x,y-7); ctx.fillText("inercial",x,y+27);
+    }
+
+    function clear() {
+      ctx.clearRect(0,0,state.width,state.height);
+      ctx.fillStyle="#fbfcfb"; ctx.fillRect(0,0,state.width,state.height);
+      ctx.strokeStyle=C.grid; ctx.lineWidth=1;
+      for(let i=0;i<9;i++){ const y=state.height*(.15+i*.085); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(state.width,y); ctx.stroke(); }
+    }
+
+    function setLegend(items) {
+      els.legend.innerHTML = items.map(it => `<span class="chip"><span class="dot" style="background:${it.color}"></span>${it.label}</span>`).join("");
+    }
+
+    function setStatus(text) {
+      els.statusLeft.textContent = text;
+      els.statusRight.textContent = "solucion analitica visualizada, no CFD";
+    }
+
+    function setMetrics(items) {
+      els.metrics.innerHTML = items.map(([a,b]) => `<div class="metric"><span>${a}</span><strong>${b}</strong></div>`).join("");
+    }
+
+    function renderTabs() {
+      els.tabs.innerHTML = "";
+      for (const m of modules) {
+        const btn = document.createElement("button");
+        btn.className = `tab ${state.active===m.id ? "active" : ""}`;
+        btn.innerHTML = `<span><strong>${m.title}</strong><span>${m.subtitle}</span></span><span class="pill">${m.tag}</span>`;
+        btn.addEventListener("click", () => { state.active=m.id; resetParticles(); render(); });
+        els.tabs.appendChild(btn);
+      }
+    }
+
+    function renderControls() {
+      const m = byId[state.active], q = state.params[state.active];
+      els.controls.innerHTML = "";
+      for (const [key,label,min,max,step] of m.controls) {
+        const wrap = document.createElement("div");
+        wrap.className = "control";
+        wrap.innerHTML = `<div class="control-head"><span>${label}</span><input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${fmt(q[key])}"></div><input data-key="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${q[key]}">`;
+        const inputs = [...wrap.querySelectorAll("[data-key]")];
+        for (const input of inputs) {
+          input.addEventListener("input", () => {
+            q[key] = parseFloat(input.value) || 0;
+            if (state.active === "p6tc" && q.b <= q.a) q.b = q.a + .05;
+            for (const peer of inputs) if (peer !== input) peer.value = q[key];
+          });
+        }
+        els.controls.appendChild(wrap);
+      }
+    }
+
+    function renderRight() {
+      const m = byId[state.active];
+      els.formula.innerHTML = m.formula.map(line => `<div>${line}</div>`).join("");
+      els.derivation.innerHTML = m.steps.map((s,i) => `<div class="step"><b>${i+1}</b><span>${s}</span></div>`).join("");
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([els.formula, els.derivation]).catch(() => {});
+      }
+    }
+
+    function render() {
+      const m = byId[state.active];
+      els.title.textContent = m.title;
+      els.subtitle.textContent = m.subtitle;
+      renderTabs();
+      renderControls();
+      renderRight();
+    }
+
+    function frame(now) {
+      const dt = Math.min(.05, (now-state.last)/1000);
+      state.last = now;
+      state.t += dt;
+      clear();
+      const m = byId[state.active];
+      m.draw(dt);
+      setMetrics(m.metrics());
+      requestAnimationFrame(frame);
+    }
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      state.params[state.active] = JSON.parse(JSON.stringify(defaults[state.active]));
+      resetParticles();
+      render();
+    });
+    document.getElementById("viewBtn").addEventListener("click", () => {
+      resetView();
+    });
+
+    canvas.addEventListener("pointerdown", evt => {
+      canvas.setPointerCapture(evt.pointerId);
+      state.camera.drag = { x: evt.clientX, y: evt.clientY, ox: state.camera.x, oy: state.camera.y };
+    });
+    canvas.addEventListener("pointermove", evt => {
+      const drag = state.camera.drag;
+      if (!drag) return;
+      state.camera.x = drag.ox + (evt.clientX - drag.x) / state.camera.zoom;
+      state.camera.y = drag.oy + (evt.clientY - drag.y) / state.camera.zoom;
+    });
+    canvas.addEventListener("pointerup", evt => {
+      canvas.releasePointerCapture(evt.pointerId);
+      state.camera.drag = null;
+    });
+    canvas.addEventListener("pointercancel", () => {
+      state.camera.drag = null;
+    });
+    canvas.addEventListener("wheel", evt => {
+      evt.preventDefault();
+      const factor = evt.deltaY < 0 ? 1.1 : 0.91;
+      state.camera.zoom = clamp(state.camera.zoom * factor, 0.45, 3.2);
+    }, { passive: false });
+
+    window.addEventListener("resize", resize);
+    resize();
+    resetParticles();
+    render();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
